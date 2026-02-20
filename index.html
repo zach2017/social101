@@ -1,841 +1,955 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SocialMind AI — Social Work Student Platform</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.5/cdn.min.js" defer></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            display: ['Playfair Display', 'serif'],
-            body: ['Plus Jakarta Sans', 'sans-serif'],
-          },
-          colors: {
-            teal:  { DEFAULT: '#0D6E74', light: '#E6F4F5', mid: '#6BBFC5', dark: '#07474B' },
-            gold:  { DEFAULT: '#C8891A', light: '#FDF4E7', mid: '#E8B870' },
-            sage:  { DEFAULT: '#3A7D44', light: '#EDF6EF' },
-            plum:  { DEFAULT: '#6E3D8A', light: '#F3ECF7' },
-            slate: { DEFAULT: '#1F2F3A', mid: '#4A5F6E', light: '#E8EDF0' },
-          },
-          animation: {
-            'fade-up': 'fadeUp 0.6s ease forwards',
-            'fade-in': 'fadeIn 0.5s ease forwards',
-            'slide-right': 'slideRight 0.5s ease forwards',
-          },
-          keyframes: {
-            fadeUp:    { from: { opacity:'0', transform:'translateY(24px)' }, to: { opacity:'1', transform:'translateY(0)' } },
-            fadeIn:    { from: { opacity:'0' }, to: { opacity:'1' } },
-            slideRight:{ from: { opacity:'0', transform:'translateX(-20px)' }, to: { opacity:'1', transform:'translateX(0)' } },
-          }
-        }
-      }
-    };
-  </script>
-
-  <style>
-    * { font-family: 'Plus Jakarta Sans', sans-serif; }
-    h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      background: #F9F6F1;
-      color: #1F2F3A;
-    }
-
-    /* Grain texture overlay */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.4;
-    }
-
-    .nav-blur {
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-    }
-
-    /* Hero mesh gradient */
-    .hero-bg {
-      background:
-        radial-gradient(ellipse 80% 60% at 70% 40%, rgba(13,110,116,0.15) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 70% at 10% 80%, rgba(200,137,26,0.1) 0%, transparent 50%),
-        #F9F6F1;
-    }
-
-    .card-hover {
-      transition: transform 0.3s cubic-bezier(.22,.68,0,1.2), box-shadow 0.3s ease;
-    }
-    .card-hover:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 20px 50px rgba(13,110,116,0.15);
-    }
-
-    .pill-active {
-      background: #0D6E74;
-      color: white;
-    }
-    .pill-inactive {
-      background: white;
-      color: #4A5F6E;
-      border: 1.5px solid #CBD5DB;
-    }
-
-    .service-card-enter { opacity: 0; transform: translateY(20px); }
-    .service-card-active { opacity: 1; transform: translateY(0); transition: opacity 0.4s ease, transform 0.4s ease; }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #F0EDE8; }
-    ::-webkit-scrollbar-thumb { background: #6BBFC5; border-radius: 99px; }
-
-    .wavy-underline {
-      text-decoration: underline wavy #C8891A;
-      text-underline-offset: 6px;
-    }
-
-    .stat-card {
-      background: linear-gradient(135deg, rgba(13,110,116,0.08), rgba(200,137,26,0.05));
-      border: 1px solid rgba(13,110,116,0.12);
-    }
-
-    .modal-overlay {
-      background: rgba(7,71,75,0.5);
-      backdrop-filter: blur(6px);
-    }
-
-    /* Animated border on active card */
-    .ring-teal-animated {
-      box-shadow: 0 0 0 3px #0D6E74, 0 20px 50px rgba(13,110,116,0.2);
-    }
-
-    /* Tag colors */
-    .tag-learning  { background: #E6F4F5; color: #07474B; }
-    .tag-research  { background: #EAF1FB; color: #2E6DA4; }
-    .tag-wellbeing { background: #EDF6EF; color: #3A7D44; }
-    .tag-practice  { background: #F3ECF7; color: #6E3D8A; }
-
-    .pillar-learning  { border-top-color: #0D6E74; }
-    .pillar-research  { border-top-color: #2E6DA4; }
-    .pillar-wellbeing { border-top-color: #3A7D44; }
-    .pillar-practice  { border-top-color: #6E3D8A; }
-
-    .dot-learning  { background: #0D6E74; }
-    .dot-research  { background: #2E6DA4; }
-    .dot-wellbeing { background: #3A7D44; }
-    .dot-practice  { background: #6E3D8A; }
-
-    .hero-badge {
-      background: linear-gradient(135deg, #0D6E74, #07474B);
-      box-shadow: 0 4px 20px rgba(13,110,116,0.35);
-    }
-
-    /* Float animation for hero icon */
-    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-    .float-anim { animation: float 4s ease-in-out infinite; }
-
-    @keyframes pulse-ring {
-      0% { box-shadow: 0 0 0 0 rgba(13,110,116,0.4); }
-      70% { box-shadow: 0 0 0 14px rgba(13,110,116,0); }
-      100% { box-shadow: 0 0 0 0 rgba(13,110,116,0); }
-    }
-    .pulse-ring { animation: pulse-ring 2.5s infinite; }
-
-    /* Stagger animation delays */
-    .delay-100 { animation-delay: 0.1s; }
-    .delay-200 { animation-delay: 0.2s; }
-    .delay-300 { animation-delay: 0.3s; }
-    .delay-400 { animation-delay: 0.4s; }
-    .delay-500 { animation-delay: 0.5s; }
-    .delay-600 { animation-delay: 0.6s; }
-
-    [x-cloak] { display: none !important; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SocialMind AI — AAMU Social Work Platform</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{display:['Playfair Display','serif'],body:['Plus Jakarta Sans','sans-serif']},colors:{teal:{DEFAULT:'#0D6E74',light:'#E6F4F5',mid:'#6BBFC5',dark:'#07474B'},gold:{DEFAULT:'#C8891A',light:'#FDF4E7',mid:'#E8B870'},sage:{DEFAULT:'#3A7D44',light:'#EDF6EF'},plum:{DEFAULT:'#6E3D8A',light:'#F3ECF7'},slate:{DEFAULT:'#1F2F3A',mid:'#4A5F6E',light:'#E8EDF0'}}}}}
+</script>
+<style>
+*{font-family:'Plus Jakarta Sans',sans-serif}
+h1,h2,h3,.font-display{font-family:'Playfair Display',serif}
+html{scroll-behavior:smooth}
+body{background:#F9F6F1;color:#1F2F3A}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.35}
+.nav-blur{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.hero-bg{background:radial-gradient(ellipse 80% 60% at 70% 40%,rgba(13,110,116,.13) 0%,transparent 60%),radial-gradient(ellipse 50% 70% at 10% 80%,rgba(200,137,26,.08) 0%,transparent 50%),#F9F6F1}
+.card-hover{transition:transform .3s cubic-bezier(.22,.68,0,1.2),box-shadow .3s ease}
+.card-hover:hover{transform:translateY(-5px);box-shadow:0 18px 45px rgba(13,110,116,.13)}
+.pill-active{background:#0D6E74;color:#fff}
+.pill-inactive{background:#fff;color:#4A5F6E;border:1.5px solid #CBD5DB}
+.tag-learning{background:#E6F4F5;color:#07474B}
+.tag-research{background:#EAF1FB;color:#2E6DA4}
+.tag-wellbeing{background:#EDF6EF;color:#3A7D44}
+.tag-practice{background:#F3ECF7;color:#6E3D8A}
+.pillar-learning{border-top-color:#0D6E74}
+.pillar-research{border-top-color:#2E6DA4}
+.pillar-wellbeing{border-top-color:#3A7D44}
+.pillar-practice{border-top-color:#6E3D8A}
+.dot-learning{background:#0D6E74}
+.dot-research{background:#2E6DA4}
+.dot-wellbeing{background:#3A7D44}
+.dot-practice{background:#6E3D8A}
+.hero-badge{background:linear-gradient(135deg,#0D6E74,#07474B);box-shadow:0 4px 20px rgba(13,110,116,.35)}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.float-anim{animation:float 4s ease-in-out infinite}
+@keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(13,110,116,.4)}70%{box-shadow:0 0 0 14px rgba(13,110,116,0)}100%{box-shadow:0 0 0 0 rgba(13,110,116,0)}}
+.pulse-ring{animation:pulse-ring 2.5s infinite}
+@keyframes typing{from{width:0}to{width:100%}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.typing-cursor::after{content:'|';animation:blink 1s infinite;color:#0D6E74}
+.modal-overlay{background:rgba(7,71,75,.55);backdrop-filter:blur(8px)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.animate-fadeup{animation:fadeUp .5s ease forwards}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.shimmer{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+.step-line{position:relative}
+.step-line::before{content:'';position:absolute;left:14px;top:32px;bottom:-8px;width:2px;background:linear-gradient(#0D6E74,transparent)}
+.ai-bubble{background:linear-gradient(135deg,#E6F4F5,#fff);border:1px solid rgba(13,110,116,.2)}
+.user-bubble{background:linear-gradient(135deg,#0D6E74,#07474B)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:#F0EDE8}
+::-webkit-scrollbar-thumb{background:#6BBFC5;border-radius:99px}
+.wavy{text-decoration:underline wavy #C8891A;text-underline-offset:6px}
+.exam-badge{background:linear-gradient(135deg,#1F2F3A,#2E4A5A)}
+.cert-card{border-left:4px solid}
+.accordion-content{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.accordion-content.open{max-height:1200px}
+.tab-active{background:#0D6E74;color:#fff;box-shadow:0 2px 8px rgba(13,110,116,.3)}
+.tab-inactive{background:#fff;color:#4A5F6E;border:1px solid #E8EDF0}
+.ref-card{border-top:3px solid}
+.study-chip{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600}
+</style>
 </head>
+<body>
 
-<body x-data="app()" x-cloak>
-
-  <!-- ═══════════════════════════════ NAV ═══════════════════════════════ -->
-  <nav class="fixed top-0 left-0 right-0 z-50 nav-blur bg-[#F9F6F1]/80 border-b border-teal-light/60">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg hero-badge flex items-center justify-center text-white text-sm font-bold">S</div>
-        <span class="font-display text-slate font-bold text-xl">SocialMind <span class="text-teal">AI</span></span>
-      </div>
-      <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-mid">
-        <a href="#pillars" class="hover:text-teal transition-colors">Pillars</a>
-        <a href="#services" class="hover:text-teal transition-colors">Services</a>
-        <a href="#wellbeing" class="hover:text-teal transition-colors">Wellbeing</a>
-        <a href="#about" class="hover:text-teal transition-colors">About</a>
-      </div>
-      <button class="hidden md:flex items-center gap-2 bg-teal text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-teal-dark transition-colors pulse-ring">
-        <span>Get Started</span>
-        <span>→</span>
-      </button>
-      <!-- Mobile menu btn -->
-      <button @click="mobileOpen = !mobileOpen" class="md:hidden text-slate">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
-      </button>
+<!-- NAV -->
+<nav class="fixed top-0 left-0 right-0 z-50 nav-blur bg-[#F9F6F1]/85 border-b border-teal-light/60">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 flex items-center justify-between h-16">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg hero-badge flex items-center justify-center text-white text-sm font-bold">S</div>
+      <span style="font-family:'Playfair Display',serif" class="text-slate font-bold text-xl">SocialMind <span class="text-teal">AI</span></span>
     </div>
-    <!-- Mobile dropdown -->
-    <div x-show="mobileOpen" x-transition class="md:hidden bg-white/95 border-t border-teal-light px-6 py-4 flex flex-col gap-4 text-sm">
-      <a href="#pillars" @click="mobileOpen=false" class="text-slate-mid hover:text-teal">Pillars</a>
-      <a href="#services" @click="mobileOpen=false" class="text-slate-mid hover:text-teal">Services</a>
-      <a href="#wellbeing" @click="mobileOpen=false" class="text-slate-mid hover:text-teal">Wellbeing</a>
-      <a href="#about" @click="mobileOpen=false" class="text-slate-mid hover:text-teal">About</a>
+    <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-mid">
+      <a href="#pillars" class="hover:text-teal transition-colors">Pillars</a>
+      <a href="#services" class="hover:text-teal transition-colors">Services</a>
+      <a href="#courses" class="hover:text-teal transition-colors">AAMU Courses</a>
+      <a href="#certifications" class="hover:text-teal transition-colors">Certifications</a>
+      <a href="#references" class="hover:text-teal transition-colors">References</a>
     </div>
-  </nav>
+    <button onclick="document.getElementById('tryModal').classList.remove('hidden')" class="hidden md:flex items-center gap-2 bg-teal text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-teal-dark transition-colors pulse-ring">
+      Try Now →
+    </button>
+    <button id="mobileBtn" onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden text-slate">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" class="hidden md:hidden bg-white/95 border-t border-teal-light px-6 py-4 flex flex-col gap-4 text-sm">
+    <a href="#pillars" class="text-slate-mid hover:text-teal">Pillars</a>
+    <a href="#services" class="text-slate-mid hover:text-teal">Services</a>
+    <a href="#courses" class="text-slate-mid hover:text-teal">AAMU Courses</a>
+    <a href="#certifications" class="text-slate-mid hover:text-teal">Certifications</a>
+    <a href="#references" class="text-slate-mid hover:text-teal">References</a>
+  </div>
+</nav>
 
-  <!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
-  <section class="hero-bg relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
-    <!-- Decorative circles -->
-    <div class="absolute top-20 right-0 w-96 h-96 rounded-full border border-teal/10 translate-x-1/2"></div>
-    <div class="absolute top-32 right-16 w-64 h-64 rounded-full border border-gold/10"></div>
-    <div class="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-teal/4 -translate-x-1/3 translate-y-1/3"></div>
-
-    <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
-      <div class="grid lg:grid-cols-2 gap-16 items-center">
-        <!-- Text -->
-        <div class="animate-fade-up">
-          <div class="inline-flex items-center gap-2 bg-teal-light border border-teal/20 text-teal px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-6">
-            <span class="w-1.5 h-1.5 rounded-full bg-teal animate-ping inline-block"></span>
-            AI-Powered Platform for Social Work Students
-          </div>
-          <h1 class="font-display text-5xl md:text-6xl lg:text-7xl leading-[1.1] text-slate mb-6">
-            Learn.<br/>
-            <span class="wavy-underline">Research.</span><br/>
-            <span class="text-teal">Thrive.</span>
-          </h1>
-          <p class="text-slate-mid text-lg leading-relaxed max-w-lg mb-10">
-            SocialMind AI is your intelligent academic partner — empowering social work students with personalized learning support, evidence-based research tools, wellbeing check-ins, and real-world practice guidance.
-          </p>
-          <div class="flex flex-wrap gap-4">
-            <button @click="scrollTo('services')" class="flex items-center gap-2 bg-teal text-white px-7 py-3.5 rounded-full font-semibold hover:bg-teal-dark transition-all hover:shadow-xl">
-              Explore Services <span class="text-lg">→</span>
-            </button>
-            <button @click="scrollTo('about')" class="flex items-center gap-2 bg-white border border-slate-light text-slate px-7 py-3.5 rounded-full font-semibold hover:border-teal hover:text-teal transition-all">
-              Our Approach
-            </button>
-          </div>
-          <!-- Stats row -->
-          <div class="flex flex-wrap gap-8 mt-12 pt-8 border-t border-teal-light">
-            <template x-for="stat in stats" :key="stat.label">
-              <div>
-                <div class="font-display text-3xl font-bold text-teal" x-text="stat.value"></div>
-                <div class="text-xs text-slate-mid font-medium mt-0.5" x-text="stat.label"></div>
-              </div>
-            </template>
-          </div>
+<!-- HERO -->
+<section class="hero-bg relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
+  <div class="absolute top-20 right-0 w-96 h-96 rounded-full border border-teal/10 translate-x-1/2"></div>
+  <div class="absolute top-32 right-16 w-64 h-64 rounded-full border border-gold/10"></div>
+  <div class="max-w-7xl mx-auto px-6 lg:px-8 relative">
+    <div class="grid lg:grid-cols-2 gap-14 items-center">
+      <div class="animate-fadeup">
+        <div class="inline-flex items-center gap-2 bg-teal-light border border-teal/20 text-teal px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-teal animate-ping inline-block"></span>
+          AAMU Social Work — AI-Powered Student Platform
         </div>
-
-        <!-- Hero visual -->
-        <div class="relative hidden lg:flex justify-center items-center animate-fade-up delay-300">
-          <div class="relative w-[420px] h-[420px]">
-            <!-- Outer ring -->
-            <div class="absolute inset-0 rounded-full border-2 border-dashed border-teal/20 animate-[spin_30s_linear_infinite]"></div>
-            <!-- Inner glow -->
-            <div class="absolute inset-8 rounded-full bg-gradient-to-br from-teal-light to-gold-light/30"></div>
-            <!-- Center icon -->
-            <div class="absolute inset-0 flex items-center justify-center float-anim">
-              <div class="w-40 h-40 rounded-3xl hero-badge flex items-center justify-center shadow-2xl">
-                <svg class="w-20 h-20 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 3.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"/>
-                </svg>
-              </div>
-            </div>
-            <!-- Orbiting badges -->
-            <template x-for="(orb, i) in orbits" :key="orb.label">
-              <div class="absolute w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg text-xl cursor-default transition-transform hover:scale-110"
-                   :class="orb.bg"
-                   :style="orb.pos"
-                   :title="orb.label">
-                <span x-text="orb.icon"></span>
-              </div>
-            </template>
-          </div>
+        <h1 style="font-family:'Playfair Display',serif" class="text-5xl md:text-6xl lg:text-7xl leading-[1.1] text-slate mb-5">
+          Learn.<br/><span class="wavy">Research.</span><br/><span class="text-teal">Thrive.</span>
+        </h1>
+        <p class="text-slate-mid text-lg leading-relaxed max-w-lg mb-8">Your AI partner for the AAMU Social Work BSW, MSW & Ph.D. programs — personalized learning, evidence-based research, field practice support, and student wellbeing, all in one place.</p>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="openTryNow('L1')" class="flex items-center gap-2 bg-teal text-white px-7 py-3.5 rounded-full font-semibold hover:bg-teal-dark transition-all shadow-lg">Try a Demo →</button>
+          <a href="#courses" class="flex items-center gap-2 bg-white border border-slate-light text-slate px-7 py-3.5 rounded-full font-semibold hover:border-teal hover:text-teal transition-all">AAMU Courses</a>
+        </div>
+        <div class="flex flex-wrap gap-8 mt-10 pt-8 border-t border-teal-light">
+          <div><div style="font-family:'Playfair Display',serif" class="text-3xl font-bold text-teal">#1</div><div class="text-xs text-slate-mid mt-0.5">Most Popular SW Program (Research.com 2024)</div></div>
+          <div><div style="font-family:'Playfair Display',serif" class="text-3xl font-bold text-teal">92%</div><div class="text-xs text-slate-mid mt-0.5">MSW Grad Employment Rate</div></div>
+          <div><div style="font-family:'Playfair Display',serif" class="text-3xl font-bold text-teal">CSWE</div><div class="text-xs text-slate-mid mt-0.5">Fully Accredited Since 1979</div></div>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════ PILLARS ═══════════════════════════════ -->
-  <section id="pillars" class="py-20 bg-white relative">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
-      <div class="text-center mb-14">
-        <p class="text-teal text-xs font-bold uppercase tracking-[0.2em] mb-3">Framework</p>
-        <h2 class="font-display text-4xl md:text-5xl text-slate mb-4">Four Interconnected Pillars</h2>
-        <p class="text-slate-mid text-lg max-w-2xl mx-auto">Every feature of SocialMind AI is designed around the complete student journey — from classroom to field placement.</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <template x-for="(pillar, idx) in pillars" :key="pillar.id">
-          <div class="group bg-[#F9F6F1] rounded-2xl p-7 border-t-4 card-hover cursor-pointer relative overflow-hidden"
-               :class="'pillar-' + pillar.id"
-               @click="filterPillar(pillar.id); scrollTo('services')">
-            <!-- Background pattern -->
-            <div class="absolute top-0 right-0 w-24 h-24 rounded-bl-full opacity-10 transition-opacity group-hover:opacity-20" :class="pillar.bgAccent"></div>
-
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-5" :class="pillar.iconBg">
-              <span x-text="pillar.icon"></span>
-            </div>
-            <h3 class="font-display text-xl text-slate mb-2 group-hover:text-teal transition-colors" x-text="pillar.name"></h3>
-            <p class="text-slate-mid text-sm leading-relaxed mb-4" x-text="pillar.tagline"></p>
-            <div class="flex items-center gap-1 text-xs font-semibold" :class="pillar.textColor">
-              <span x-text="pillar.count + ' Services'"></span>
-              <span>→</span>
+      <div class="hidden lg:flex justify-center items-center">
+        <div class="relative w-[380px] h-[380px]">
+          <div class="absolute inset-0 rounded-full border-2 border-dashed border-teal/15" style="animation:spin 35s linear infinite"></div>
+          <div class="absolute inset-8 rounded-full bg-gradient-to-br from-teal-light to-gold-light/30"></div>
+          <div class="absolute inset-0 flex items-center justify-center float-anim">
+            <div class="w-36 h-36 rounded-3xl hero-badge flex items-center justify-center shadow-2xl">
+              <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 3.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5"/></svg>
             </div>
           </div>
-        </template>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════ SERVICES ═══════════════════════════════ -->
-  <section id="services" class="py-20 bg-[#F9F6F1]">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-        <div>
-          <p class="text-teal text-xs font-bold uppercase tracking-[0.2em] mb-3">What We Offer</p>
-          <h2 class="font-display text-4xl md:text-5xl text-slate">Our Services</h2>
-        </div>
-        <!-- Filter pills -->
-        <div class="flex flex-wrap gap-2">
-          <button @click="activeFilter = 'all'"
-                  :class="activeFilter === 'all' ? 'pill-active' : 'pill-inactive'"
-                  class="px-4 py-1.5 rounded-full text-sm font-semibold transition-all">All</button>
-          <template x-for="pillar in pillars" :key="pillar.id">
-            <button @click="activeFilter = pillar.id"
-                    :class="activeFilter === pillar.id ? 'pill-active' : 'pill-inactive'"
-                    class="px-4 py-1.5 rounded-full text-sm font-semibold transition-all"
-                    x-text="pillar.shortName">
-            </button>
-          </template>
+          <div class="absolute w-12 h-12 rounded-2xl bg-teal-light flex items-center justify-center text-xl shadow-lg" style="top:5%;left:52%">📚</div>
+          <div class="absolute w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-xl shadow-lg" style="top:48%;right:1%">🔬</div>
+          <div class="absolute w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-xl shadow-lg" style="bottom:6%;left:48%">💚</div>
+          <div class="absolute w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-xl shadow-lg" style="top:42%;left:1%">🏛️</div>
         </div>
       </div>
-
-      <!-- Results count -->
-      <p class="text-slate-mid text-sm mb-6">
-        Showing <span class="font-semibold text-teal" x-text="filteredServices.length"></span> services
-        <span x-show="activeFilter !== 'all'"> in <span class="font-semibold" x-text="pillars.find(p=>p.id===activeFilter)?.name"></span></span>
-      </p>
-
-      <!-- Services grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <template x-for="(svc, idx) in filteredServices" :key="svc.id">
-          <div class="bg-white rounded-2xl overflow-hidden card-hover cursor-pointer border border-transparent hover:border-teal/20 shadow-sm"
-               @click="openModal(svc)"
-               :style="'animation-delay:' + (idx * 80) + 'ms'"
-               x-intersect.once="$el.classList.add('animate-fade-up')">
-            <!-- Color bar -->
-            <div class="h-1.5 w-full" :class="svc.barColor"></div>
-            <div class="p-6">
-              <div class="flex items-start justify-between mb-4">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0" :class="svc.iconBg">
-                  <span x-text="svc.icon"></span>
-                </div>
-                <span class="text-xs font-semibold px-2.5 py-1 rounded-full" :class="'tag-' + svc.pillar" x-text="svc.goalCode"></span>
-              </div>
-              <h3 class="font-display text-lg text-slate mb-2" x-text="svc.title"></h3>
-              <p class="text-slate-mid text-sm leading-relaxed mb-5" x-text="svc.summary"></p>
-              <!-- Outcomes preview -->
-              <ul class="space-y-1.5 mb-5">
-                <template x-for="(outcome, i) in svc.outcomes.slice(0,2)" :key="i">
-                  <li class="flex items-start gap-2 text-xs text-slate-mid">
-                    <span class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" :class="'dot-' + svc.pillar"></span>
-                    <span x-text="outcome"></span>
-                  </li>
-                </template>
-              </ul>
-              <div class="flex items-center justify-between pt-4 border-t border-slate-light/60">
-                <span class="text-xs font-semibold text-slate-mid" x-text="svc.outcomes.length + ' capabilities'"></span>
-                <span class="text-teal text-sm font-semibold flex items-center gap-1">Learn more <span>→</span></span>
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════ WELLBEING HIGHLIGHT ═══════════════════════════════ -->
-  <section id="wellbeing" class="py-20 bg-white overflow-hidden">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
-      <div class="grid lg:grid-cols-2 gap-14 items-center">
-        <!-- Visual side -->
-        <div class="relative">
-          <div class="relative bg-gradient-to-br from-sage-light to-sage/10 rounded-3xl p-10 overflow-hidden">
-            <!-- Background decoration -->
-            <div class="absolute -top-8 -right-8 w-48 h-48 rounded-full bg-sage/10"></div>
-            <div class="absolute -bottom-12 -left-6 w-36 h-36 rounded-full bg-gold/10"></div>
-
-            <div class="relative">
-              <div class="text-6xl mb-6">💚</div>
-              <h3 class="font-display text-3xl text-slate mb-4">Your Wellbeing<br/>Matters Here</h3>
-              <p class="text-slate-mid leading-relaxed mb-8">Social work is emotionally demanding. SocialMind AI provides a safe, confidential space to process difficult experiences and build lasting resilience.</p>
-
-              <!-- Wellbeing checklist -->
-              <div class="space-y-3">
-                <template x-for="item in wellbeingItems" :key="item">
-                  <div class="flex items-center gap-3 bg-white/70 rounded-xl px-4 py-3">
-                    <span class="w-5 h-5 rounded-full bg-sage flex items-center justify-center text-white text-xs">✓</span>
-                    <span class="text-sm font-medium text-slate" x-text="item"></span>
-                  </div>
-                </template>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Text side -->
-        <div>
-          <p class="text-sage text-xs font-bold uppercase tracking-[0.2em] mb-3">Student Wellbeing</p>
-          <h2 class="font-display text-4xl md:text-5xl text-slate mb-6">Compassion Starts<br/><span class="text-sage">With You</span></h2>
-          <p class="text-slate-mid text-lg leading-relaxed mb-8">
-            We believe you cannot pour from an empty cup. SocialMind AI integrates trauma-informed, evidence-based wellbeing support directly into your learning journey — not as an afterthought, but as a core service.
-          </p>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-            <template x-for="card in wellbeingCards" :key="card.title">
-              <div class="text-center p-5 rounded-2xl stat-card">
-                <div class="text-3xl mb-2" x-text="card.icon"></div>
-                <div class="font-semibold text-slate text-sm" x-text="card.title"></div>
-                <div class="text-xs text-slate-mid mt-1" x-text="card.sub"></div>
-              </div>
-            </template>
-          </div>
-
-          <div class="flex gap-4">
-            <button @click="filterPillar('wellbeing'); scrollTo('services')" class="bg-sage text-white px-6 py-3 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity">
-              Explore Wellbeing Services
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════ PRINCIPLES ═══════════════════════════════ -->
-  <section class="py-20 bg-[#F9F6F1]">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
-      <div class="text-center mb-14">
-        <p class="text-teal text-xs font-bold uppercase tracking-[0.2em] mb-3">Our Foundation</p>
-        <h2 class="font-display text-4xl md:text-5xl text-slate">Guiding Principles</h2>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        <template x-for="(p, i) in principles" :key="p.title">
-          <div class="bg-white rounded-2xl p-6 flex gap-4 items-start border border-transparent hover:border-teal/20 transition-all card-hover">
-            <div class="w-10 h-10 rounded-xl text-xl flex items-center justify-center shrink-0" :class="p.iconBg">
-              <span x-text="p.icon"></span>
-            </div>
-            <div>
-              <h4 class="font-semibold text-slate mb-1" x-text="p.title"></h4>
-              <p class="text-slate-mid text-sm leading-relaxed" x-text="p.desc"></p>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════ CTA ═══════════════════════════════ -->
-  <section id="about" class="py-20 bg-white">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
-      <div class="bg-gradient-to-r from-teal-dark to-teal rounded-3xl p-12 md:p-16 relative overflow-hidden text-center">
-        <div class="absolute top-0 right-0 w-96 h-96 rounded-full bg-white/5 translate-x-1/4 -translate-y-1/4"></div>
-        <div class="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-gold/10 -translate-x-1/4 translate-y-1/4"></div>
-        <div class="relative">
-          <p class="text-teal-mid text-xs font-bold uppercase tracking-[0.2em] mb-4">Ready to Begin?</p>
-          <h2 class="font-display text-4xl md:text-5xl text-white mb-5">Your AI Partner in<br/>Social Work Education</h2>
-          <p class="text-teal-mid text-lg max-w-xl mx-auto mb-10 leading-relaxed">
-            Join thousands of social work students using SocialMind AI to learn smarter, research deeper, stay well, and practice with confidence.
-          </p>
-          <div class="flex flex-wrap gap-4 justify-center">
-            <button class="bg-white text-teal px-8 py-4 rounded-full font-bold hover:shadow-xl transition-all hover:-translate-y-1">
-              Start for Free Today
-            </button>
-            <button class="border-2 border-white/30 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/10 transition-all">
-              Schedule a Demo
-            </button>
-          </div>
-          <p class="text-teal-mid/70 text-xs mt-6">CSWE-aligned · Trauma-informed · NASW Code of Ethics compliant</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
-  <footer class="bg-slate py-14">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-        <div class="col-span-2 md:col-span-1">
-          <div class="flex items-center gap-2 mb-4">
-            <div class="w-8 h-8 rounded-lg hero-badge flex items-center justify-center text-white text-sm font-bold">S</div>
-            <span class="font-display text-white text-xl">SocialMind <span class="text-teal-mid">AI</span></span>
-          </div>
-          <p class="text-slate-mid text-sm leading-relaxed max-w-xs">Empowering social work students with AI-enhanced learning, research, and practice support.</p>
-        </div>
-        <div>
-          <h5 class="text-white font-semibold text-sm mb-4">Services</h5>
-          <ul class="space-y-2 text-sm text-slate-mid">
-            <li><a href="#" class="hover:text-teal-mid transition-colors">Learning Support</a></li>
-            <li><a href="#" class="hover:text-teal-mid transition-colors">Research Tools</a></li>
-            <li><a href="#" class="hover:text-teal-mid transition-colors">Wellbeing Check-ins</a></li>
-            <li><a href="#" class="hover:text-teal-mid transition-colors">Field Practice</a></li>
-          </ul>
-        </div>
-        <div>
-          <h5 class="text-white font-semibold text-sm mb-4">Resources</h5>
-          <ul class="space-y-2 text-sm text-slate-mid">
-            <li><a href="#" class="hover:text-teal-mid transition-colors">CSWE Competencies</a></li>
-            <li><a href="#" class="hover:text-teal-mid transition-colors">NASW Code of Ethics</a></li>
-            <li><a href="#" class="hover:text-teal-mid transition-colors">EBP Library</a></li>
-            <li><a href="#" class="hover:text-teal-mid transition-colors">Documentation Templates</a></li>
-          </ul>
-        </div>
-        <div>
-          <h5 class="text-white font-semibold text-sm mb-4">About</h5>
-          <ul class="space-y-2 text-sm text-slate-mid">
-            <li><a href="#" class="hover:text-teal-mid transition-colors">Our Mission</a></li>
-            <li><a href="#" class="hover:text-teal-mid transition-colors">Guiding Principles</a></li>
-            <li><a href="#" class="hover:text-teal-mid transition-colors">Privacy & FERPA</a></li>
-            <li><a href="#" class="hover:text-teal-mid transition-colors">Contact</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-        <p class="text-slate-mid text-xs">© 2025 SocialMind AI. All rights reserved. Designed for social work education.</p>
-        <p class="text-slate-mid text-xs">CSWE-Aligned · Trauma-Informed · Ethics-First</p>
-      </div>
-    </div>
-  </footer>
-
-  <!-- ═══════════════════════════════ SERVICE MODAL ═══════════════════════════════ -->
-  <div x-show="modalSvc" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-       class="fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4"
-       @click.self="modalSvc = null">
-    <div x-show="modalSvc" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-         class="bg-white rounded-3xl max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl">
-      <template x-if="modalSvc">
-        <div>
-          <!-- Modal color bar -->
-          <div class="h-2 rounded-t-3xl" :class="modalSvc.barColor"></div>
-          <div class="p-8">
-            <!-- Header -->
-            <div class="flex items-start justify-between mb-6">
-              <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" :class="modalSvc.iconBg">
-                  <span x-text="modalSvc.icon"></span>
-                </div>
-                <div>
-                  <span class="text-xs font-semibold px-2.5 py-1 rounded-full" :class="'tag-' + modalSvc.pillar" x-text="modalSvc.goalCode"></span>
-                  <h3 class="font-display text-2xl text-slate mt-1" x-text="modalSvc.title"></h3>
-                </div>
-              </div>
-              <button @click="modalSvc = null" class="text-slate-mid hover:text-slate transition-colors mt-1">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </div>
-
-            <!-- Description -->
-            <p class="text-slate-mid leading-relaxed mb-6" x-text="modalSvc.description"></p>
-
-            <!-- Full outcomes -->
-            <div class="mb-6">
-              <h4 class="font-semibold text-slate text-sm uppercase tracking-wide mb-3">Key Capabilities</h4>
-              <ul class="space-y-2.5">
-                <template x-for="(outcome, i) in modalSvc.outcomes" :key="i">
-                  <li class="flex items-start gap-3">
-                    <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 text-white" :class="modalSvc.dotClass" x-text="i+1"></span>
-                    <span class="text-sm text-slate leading-relaxed" x-text="outcome"></span>
-                  </li>
-                </template>
-              </ul>
-            </div>
-
-            <!-- Tags -->
-            <div class="flex flex-wrap gap-2 pt-5 border-t border-slate-light">
-              <template x-for="tag in modalSvc.tags" :key="tag">
-                <span class="bg-slate-light text-slate-mid px-3 py-1 rounded-full text-xs font-medium" x-text="tag"></span>
-              </template>
-            </div>
-          </div>
-        </div>
-      </template>
     </div>
   </div>
+</section>
 
-  <!-- ═══════════════════════════════ APP SCRIPT ═══════════════════════════════ -->
-  <script>
-    function app() {
-      return {
-        mobileOpen: false,
-        activeFilter: 'all',
-        modalSvc: null,
+<!-- PILLARS -->
+<section id="pillars" class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <p class="text-teal text-xs font-bold uppercase tracking-[.2em] mb-2">Framework</p>
+      <h2 style="font-family:'Playfair Display',serif" class="text-4xl md:text-5xl text-slate mb-3">Four Interconnected Pillars</h2>
+      <p class="text-slate-mid max-w-xl mx-auto">Every feature built around the complete AAMU social work student journey — classroom to field.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5" id="pillarsGrid"></div>
+  </div>
+</section>
 
-        stats: [
-          { value: "13", label: "Core Services" },
-          { value: "4",  label: "Learning Pillars" },
-          { value: "CSWE", label: "Aligned" },
-        ],
+<!-- SERVICES -->
+<section id="services" class="py-16 bg-[#F9F6F1]">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8">
+      <div>
+        <p class="text-teal text-xs font-bold uppercase tracking-[.2em] mb-2">What We Offer</p>
+        <h2 style="font-family:'Playfair Display',serif" class="text-4xl text-slate">Our Services</h2>
+      </div>
+      <div class="flex flex-wrap gap-2" id="filterPills"></div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="servicesGrid"></div>
+  </div>
+</section>
 
-        orbits: [
-          { icon: "📚", label: "Learning",   bg: "bg-teal-light", pos: "top:6%; left:55%" },
-          { icon: "🔬", label: "Research",   bg: "bg-blue-50",    pos: "top:50%; right:2%" },
-          { icon: "💚", label: "Wellbeing",  bg: "bg-sage-light", pos: "bottom:8%; left:50%" },
-          { icon: "🏛️", label: "Practice",   bg: "bg-plum-light", pos: "top:40%; left:2%" },
-        ],
+<!-- AAMU COURSES -->
+<section id="courses" class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="text-center mb-10">
+      <div class="inline-flex items-center gap-2 bg-gold-light border border-gold/20 text-gold px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-4">🎓 Alabama A&M University — Department of Social Work</div>
+      <h2 style="font-family:'Playfair Display',serif" class="text-4xl md:text-5xl text-slate mb-3">AAMU Course Study Materials</h2>
+      <p class="text-slate-mid max-w-2xl mx-auto">Sample study content, key concepts, and research resources aligned to AAMU's BSW and MSW curriculum — <a href="https://www.aamu.edu/academics/colleges/education-humanities-behavioral-sciences/departments/social-work/" target="_blank" class="text-teal underline font-semibold">view full program at aamu.edu →</a></p>
+    </div>
+    <!-- Level Tabs -->
+    <div class="flex gap-2 mb-8 flex-wrap justify-center">
+      <button onclick="showCourseLevel('bsw')" id="tab-bsw" class="px-5 py-2 rounded-full text-sm font-semibold transition-all tab-active">BSW Courses</button>
+      <button onclick="showCourseLevel('msw')" id="tab-msw" class="px-5 py-2 rounded-full text-sm font-semibold transition-all tab-inactive">MSW Courses</button>
+      <button onclick="showCourseLevel('phd')" id="tab-phd" class="px-5 py-2 rounded-full text-sm font-semibold transition-all tab-inactive">Ph.D. Program</button>
+    </div>
+    <div id="coursesGrid"></div>
+  </div>
+</section>
 
-        pillars: [
-          { id: "learning",  name: "Learning",           shortName: "Learning",  tagline: "Personalized academic guidance, critical thinking, and assessment preparation.",  icon: "📚", count: 3, iconBg: "bg-teal-light",  bgAccent: "bg-teal",  textColor: "text-teal" },
-          { id: "research",  name: "Research",           shortName: "Research",  tagline: "Evidence-based practice literacy, methodology, and data analysis skills.",         icon: "🔬", count: 3, iconBg: "bg-blue-50",    bgAccent: "bg-blue-400",textColor: "text-blue-600" },
-          { id: "wellbeing", name: "Student Wellbeing",  shortName: "Wellbeing", tagline: "Stress management, emotional resilience, and professional identity formation.",    icon: "💚", count: 3, iconBg: "bg-sage-light",  bgAccent: "bg-sage",  textColor: "text-sage" },
-          { id: "practice",  name: "Theory to Practice", shortName: "Practice",  tagline: "Field placement support, intervention planning, and documentation skills.",       icon: "🏛️", count: 4, iconBg: "bg-plum-light",  bgAccent: "bg-plum",  textColor: "text-plum" },
-        ],
+<!-- CERTIFICATIONS -->
+<section id="certifications" class="py-16 bg-[#F9F6F1]">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="text-center mb-10">
+      <p class="text-teal text-xs font-bold uppercase tracking-[.2em] mb-2">Licensure Pathway</p>
+      <h2 style="font-family:'Playfair Display',serif" class="text-4xl md:text-5xl text-slate mb-3">Certifications & Licensing Exams</h2>
+      <p class="text-slate-mid max-w-2xl mx-auto">Alabama requires licensure through the ABSWE. All exams are administered by the Association of Social Work Boards (ASWB). Alabama joined the Social Work Licensure Compact in 2024.</p>
+    </div>
+    <div id="certsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-10"></div>
+    <!-- ASWB Exam Info -->
+    <div class="bg-white rounded-2xl p-8 border border-teal-light/60 mb-8">
+      <h3 style="font-family:'Playfair Display',serif" class="text-2xl text-slate mb-5 flex items-center gap-2">🎯 ASWB Exam Overview</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="aswbExams"></div>
+    </div>
+    <!-- Alabama Process -->
+    <div class="bg-white rounded-2xl p-8 border border-teal-light/60">
+      <h3 style="font-family:'Playfair Display',serif" class="text-2xl text-slate mb-5">📋 Alabama Licensure Application Steps</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4" id="licenseSteps"></div>
+    </div>
+  </div>
+</section>
 
-        services: [
-          // ── LEARNING ──
-          {
-            id: "L1", goalCode: "L1", pillar: "learning",
-            icon: "🎯", iconBg: "bg-teal-light", barColor: "bg-teal", dotClass: "bg-teal",
-            title: "Personalized Learning Support",
-            summary: "Adaptive academic guidance tailored to each student's pace, style, and curriculum stage.",
-            description: "SocialMind AI delivers curriculum-aligned explanations and adapts to your individual learning profile. Whether you prefer visual walkthroughs, case-based scenarios, or direct concept explanations, the AI meets you where you are.",
-            outcomes: [
-              "Curriculum-aligned explanations across all social work modules",
-              "Adapts content complexity to individual learning levels and styles",
-              "Identifies knowledge gaps and recommends targeted study resources",
-              "Supports multiple learning modalities — visual, textual, and case-based"
-            ],
-            tags: ["Adaptive Learning", "Curriculum Alignment", "Knowledge Gaps", "Student-Centered"]
-          },
-          {
-            id: "L2", goalCode: "L2", pillar: "learning",
-            icon: "📝", iconBg: "bg-teal-light", barColor: "bg-teal", dotClass: "bg-teal",
-            title: "Assessment & Exam Preparation",
-            summary: "Build confidence and competency for assignments, licensing exams, and course evaluations.",
-            description: "From practice quizzes to detailed assignment feedback, SocialMind AI helps you prepare for every evaluation. Generate CSWE-aligned practice questions, get personalized study plans, and track your progress over time.",
-            outcomes: [
-              "Practice questions aligned to CSWE competencies and course objectives",
-              "Detailed feedback on written assignments and reflective journals",
-              "Concept review sessions and personalized study planning tools",
-              "Progress tracking with highlighted areas for further development"
-            ],
-            tags: ["CSWE Competencies", "Study Planning", "Assignment Feedback", "Exam Prep"]
-          },
-          {
-            id: "L3", goalCode: "L3", pillar: "learning",
-            icon: "🧠", iconBg: "bg-teal-light", barColor: "bg-teal", dotClass: "bg-teal",
-            title: "Critical Thinking Development",
-            summary: "Foster analytical, ethical, and reflective thinking skills essential to effective social work.",
-            description: "Critical thinking is the heartbeat of social work practice. The AI uses Socratic questioning, ethical dilemma simulations, and structured reflection prompts to develop your analytical depth — helping you see systems, not just symptoms.",
-            outcomes: [
-              "Socratic questions to deepen understanding of complex concepts",
-              "Guide evaluation of ethical dilemmas using the NASW Code of Ethics",
-              "Structured reflective journaling prompts for practice integration",
-              "Analysis of diverse perspectives including cultural and systemic factors"
-            ],
-            tags: ["Ethics", "NASW", "Reflective Practice", "Systems Thinking"]
-          },
-          // ── RESEARCH ──
-          {
-            id: "R1", goalCode: "R1", pillar: "research",
-            icon: "🔍", iconBg: "bg-blue-50", barColor: "bg-blue-500", dotClass: "bg-blue-500",
-            title: "Research Literacy & Methodology",
-            summary: "Build the foundation for rigorous, ethical, evidence-based social work research.",
-            description: "Understanding research is central to professional social work. SocialMind AI walks you through qualitative, quantitative, and mixed methods approaches, guiding everything from literature review strategy to IRB ethics.",
-            outcomes: [
-              "Explains qualitative, quantitative, and mixed methods research approaches",
-              "Assists with literature review structure, search strategies, and source evaluation",
-              "Supports APA and other citation formatting and academic writing standards",
-              "Guides ethical considerations in social work research — IRB, informed consent"
-            ],
-            tags: ["Qualitative", "Quantitative", "APA", "IRB", "Literature Review"]
-          },
-          {
-            id: "R2", goalCode: "R2", pillar: "research",
-            icon: "📊", iconBg: "bg-blue-50", barColor: "bg-blue-500", dotClass: "bg-blue-500",
-            title: "Evidence-Based Practice (EBP)",
-            summary: "Connect peer-reviewed research directly to your client assessment and intervention decisions.",
-            description: "EBP is the gold standard in contemporary social work. SocialMind AI helps you locate, critically appraise, and apply the best available evidence to real client scenarios — bridging the gap between academic research and practice wisdom.",
-            outcomes: [
-              "Locate, interpret, and apply peer-reviewed research to practice contexts",
-              "Translate empirical findings into practice-relevant insights",
-              "Support systematic review and critical appraisal of intervention studies",
-              "Facilitate understanding of data-driven policy and program evaluation"
-            ],
-            tags: ["EBP", "Systematic Review", "Intervention Research", "Critical Appraisal"]
-          },
-          {
-            id: "R3", goalCode: "R3", pillar: "research",
-            icon: "📈", iconBg: "bg-blue-50", barColor: "bg-blue-500", dotClass: "bg-blue-500",
-            title: "Data Analysis Support",
-            summary: "Develop competency in interpreting social work data, statistics, and community assessments.",
-            description: "Numbers tell human stories. SocialMind AI demystifies data analysis for social work students — from basic statistics to community needs assessments — helping you become a confident, data-informed practitioner.",
-            outcomes: [
-              "Guide students through basic statistical concepts and analysis interpretation",
-              "Assist with understanding community needs assessments and program data",
-              "Support use of research tools common in social work including SPSS",
-              "Facilitate understanding of social determinants data and population health metrics"
-            ],
-            tags: ["Statistics", "SPSS", "Needs Assessment", "Population Health", "Program Evaluation"]
-          },
-          // ── WELLBEING ──
-          {
-            id: "W1", goalCode: "W1", pillar: "wellbeing",
-            icon: "🌿", iconBg: "bg-sage-light", barColor: "bg-sage", dotClass: "bg-sage",
-            title: "Stress & Burnout Prevention",
-            summary: "Protect your mental health with evidence-based self-care tools and burnout screening.",
-            description: "Social work programs are demanding by nature. SocialMind AI monitors signs of academic burnout and compassion fatigue, offering personalized self-care strategies, mindfulness check-ins, and boundary-setting guidance before stress escalates.",
-            outcomes: [
-              "Evidence-based self-care strategies and regular wellness check-ins",
-              "Early recognition of academic burnout and compassion fatigue signs",
-              "Grounding and mindfulness techniques tailored to student schedules",
-              "Guidance on healthy boundaries between academic, personal, and practice roles"
-            ],
-            tags: ["Self-Care", "Burnout", "Mindfulness", "Compassion Fatigue", "Boundaries"]
-          },
-          {
-            id: "W2", goalCode: "W2", pillar: "wellbeing",
-            icon: "🫂", iconBg: "bg-sage-light", barColor: "bg-sage", dotClass: "bg-sage",
-            title: "Emotional Processing & Resilience",
-            summary: "A safe, non-judgmental space for debriefing challenging client and fieldwork experiences.",
-            description: "Working with vulnerable populations is profound and often emotionally weighty. SocialMind AI provides a trauma-informed space for reflection after difficult sessions, validating secondary traumatic stress and building your capacity for sustained compassion.",
-            outcomes: [
-              "Safe, non-judgmental space for processing difficult fieldwork experiences",
-              "Structured reflective debriefing after challenging client interactions",
-              "Normalize emotional labor of social work and validate student experiences",
-              "Connect students to professional counseling and support services when needed"
-            ],
-            tags: ["Secondary Trauma", "Debriefing", "Trauma-Informed", "Emotional Processing"]
-          },
-          {
-            id: "W3", goalCode: "W3", pillar: "wellbeing",
-            icon: "🌟", iconBg: "bg-sage-light", barColor: "bg-sage", dotClass: "bg-sage",
-            title: "Professional Identity Formation",
-            summary: "Nurture a positive, sustainable professional self-concept rooted in your values.",
-            description: "Who you are as a social worker matters. SocialMind AI guides you in articulating your professional values, examining your positionality, and developing the self-awareness that distinguishes great practitioners — while celebrating your growth along the way.",
-            outcomes: [
-              "Articulate and strengthen professional values and motivations",
-              "Develop healthy professional boundaries and self-awareness",
-              "Explore positionality, privilege, and personal biases with guided reflection",
-              "Celebrate student growth, milestones, and professional achievements"
-            ],
-            tags: ["Professional Identity", "Positionality", "Self-Awareness", "Values"]
-          },
-          // ── PRACTICE ──
-          {
-            id: "P1", goalCode: "P1", pillar: "practice",
-            icon: "🔗", iconBg: "bg-plum-light", barColor: "bg-plum", dotClass: "bg-plum",
-            title: "Theory-to-Practice Translation",
-            summary: "Bridge classroom knowledge and real-world application through guided case scenarios.",
-            description: "Theory without practice is incomplete. SocialMind AI generates realistic case scenarios, helps you apply frameworks like CBT, systems theory, and trauma-informed care, and guides your use of essential assessment tools used in the field.",
-            outcomes: [
-              "Apply theoretical frameworks — CBT, systems theory, trauma-informed care — to cases",
-              "Connect classroom learning to fieldwork observations and supervisor feedback",
-              "Realistic practice scenarios for skill rehearsal and role-play preparation",
-              "Guide the use of assessment tools: genograms, ecomaps, risk assessments"
-            ],
-            tags: ["CBT", "Systems Theory", "Trauma-Informed", "Genograms", "Case Scenarios"]
-          },
-          {
-            id: "P2", goalCode: "P2", pillar: "practice",
-            icon: "🏥", iconBg: "bg-plum-light", barColor: "bg-plum", dotClass: "bg-plum",
-            title: "Internship & Field Placement Support",
-            summary: "Maximize your performance and learning during internship and field placement.",
-            description: "Field placement is where everything comes together. SocialMind AI supports you through learning contract development, supervision preparation, agency navigation, and integrating supervisor feedback into meaningful professional growth.",
-            outcomes: [
-              "Develop and refine learning contracts and goal-setting for field placements",
-              "Supervision preparation, reflective notes, and professional documentation",
-              "Navigate agency policies and professional communication expectations",
-              "Process and integrate feedback from field supervisors and clients"
-            ],
-            tags: ["Field Placement", "Learning Contracts", "Supervision", "Agency Navigation"]
-          },
-          {
-            id: "P3", goalCode: "P3", pillar: "practice",
-            icon: "🤝", iconBg: "bg-plum-light", barColor: "bg-plum", dotClass: "bg-plum",
-            title: "Intervention Planning & Skills",
-            summary: "Build direct practice competency across micro, mezzo, and macro levels.",
-            description: "From individual therapy sessions to community organizing, SocialMind AI coaches you across all levels of social work intervention — helping you develop confident, culturally responsive, and anti-oppressive practice skills.",
-            outcomes: [
-              "Coach micro, mezzo, and macro level intervention strategies",
-              "Develop treatment and service plans with appropriate, measurable goal-setting",
-              "Crisis intervention, de-escalation, and safety planning guidance",
-              "Culturally responsive and anti-oppressive practice approaches"
-            ],
-            tags: ["Micro Practice", "Macro Practice", "Crisis Intervention", "Anti-Oppressive"]
-          },
-          {
-            id: "P4", goalCode: "P4", pillar: "practice",
-            icon: "📋", iconBg: "bg-plum-light", barColor: "bg-plum", dotClass: "bg-plum",
-            title: "Documentation & Professional Writing",
-            summary: "Master the documentation skills that define professional social work practice.",
-            description: "Clear, accurate documentation protects clients and practitioners alike. SocialMind AI guides you through every documentation format you'll encounter — from SOAP notes to grant proposals — with a constant eye on HIPAA, ethics, and confidentiality.",
-            outcomes: [
-              "Case notes, progress reports, and psychosocial assessment writing",
-              "SOAP notes, DAP format, and agency-specific documentation standards",
-              "Grant writing, advocacy letters, and community needs reports",
-              "HIPAA, confidentiality, and ethical documentation compliance guidance"
-            ],
-            tags: ["SOAP Notes", "HIPAA", "Case Notes", "Grant Writing", "Advocacy"]
-          },
-        ],
+<!-- REFERENCES -->
+<section id="references" class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="text-center mb-10">
+      <p class="text-teal text-xs font-bold uppercase tracking-[.2em] mb-2">Key Resources</p>
+      <h2 style="font-family:'Playfair Display',serif" class="text-4xl text-slate mb-3">References & Key Information</h2>
+      <p class="text-slate-mid max-w-xl mx-auto">Essential organizations, standards, and frameworks that guide social work education and practice.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="refsGrid"></div>
+  </div>
+</section>
 
-        wellbeingItems: [
-          "Burnout & Compassion Fatigue Screening",
-          "Guided Reflective Debriefs After Hard Sessions",
-          "Mindfulness & Grounding Exercises",
-          "Professional Boundary Coaching",
-          "Referrals to Campus Counseling When Needed",
-        ],
+<!-- PRINCIPLES -->
+<section class="py-16 bg-[#F9F6F1]">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="text-center mb-10">
+      <p class="text-teal text-xs font-bold uppercase tracking-[.2em] mb-2">Our Foundation</p>
+      <h2 style="font-family:'Playfair Display',serif" class="text-4xl text-slate">Guiding Principles</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="principlesGrid"></div>
+  </div>
+</section>
 
-        wellbeingCards: [
-          { icon: "🧘", title: "Mindfulness Tools", sub: "Evidence-based practices" },
-          { icon: "🛡️", title: "Boundary Support",  sub: "Work-life integration" },
-          { icon: "🌱", title: "Growth Tracking",   sub: "Celebrate milestones" },
-        ],
+<!-- CTA -->
+<section class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="bg-gradient-to-r from-teal-dark to-teal rounded-3xl p-12 md:p-16 relative overflow-hidden text-center">
+      <div class="absolute top-0 right-0 w-96 h-96 rounded-full bg-white/5 translate-x-1/4 -translate-y-1/4"></div>
+      <div class="relative">
+        <p class="text-teal-mid text-xs font-bold uppercase tracking-[.2em] mb-3">Built for AAMU Students</p>
+        <h2 style="font-family:'Playfair Display',serif" class="text-4xl md:text-5xl text-white mb-4">Ready to Elevate Your Social Work Journey?</h2>
+        <p class="text-teal-mid text-lg max-w-xl mx-auto mb-8 leading-relaxed">Join AAMU social work students using SocialMind AI to excel in coursework, prepare for ASWB licensing exams, and thrive in field placement.</p>
+        <div class="flex flex-wrap gap-3 justify-center">
+          <button onclick="openTryNow('L2')" class="bg-white text-teal px-8 py-4 rounded-full font-bold hover:shadow-xl transition-all hover:-translate-y-1">Try a Free Demo</button>
+          <a href="https://www.aamu.edu/academics/colleges/education-humanities-behavioral-sciences/departments/social-work/" target="_blank" class="border-2 border-white/30 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/10 transition-all">Visit AAMU Social Work →</a>
+        </div>
+        <p class="text-teal-mid/60 text-xs mt-5">CSWE-Accredited · NASW Code of Ethics · Trauma-Informed · Alabama ABSWE Compliant</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-        principles: [
-          { icon: "⚖️", title: "Ethical Foundation",     desc: "All interactions uphold the NASW Code of Ethics — dignity, justice, confidentiality, and non-maleficence.",          iconBg: "bg-teal-light" },
-          { icon: "🌍", title: "Cultural Humility",       desc: "Content reflects anti-oppressive, anti-racist, and culturally responsive social work practice.",                    iconBg: "bg-gold-light" },
-          { icon: "🫀", title: "Trauma-Informed Design",  desc: "The AI engages students with sensitivity, recognizing secondary traumatic stress and avoiding re-traumatization.", iconBg: "bg-sage-light" },
-          { icon: "🎓", title: "CSWE Alignment",          desc: "All goals are mapped to CSWE Educational Policy and Accreditation Standards (EPAS) competencies.",                  iconBg: "bg-blue-50" },
-          { icon: "🤲", title: "Equity & Accessibility",  desc: "Designed to support students from diverse backgrounds, abilities, and learning needs without exception.",           iconBg: "bg-plum-light" },
-          { icon: "👩‍🏫", title: "Human Oversight",        desc: "The AI supplements — never replaces — faculty, field supervisors, and licensed social work practitioners.",        iconBg: "bg-teal-light" },
-        ],
+<!-- FOOTER -->
+<footer class="bg-slate py-12">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 rounded-lg hero-badge flex items-center justify-center text-white text-sm font-bold">S</div>
+          <span style="font-family:'Playfair Display',serif" class="text-white text-xl">SocialMind <span class="text-teal-mid">AI</span></span>
+        </div>
+        <p class="text-slate-mid text-sm leading-relaxed">AI-powered platform for AAMU social work students. CSWE-aligned, NASW ethics-grounded, trauma-informed.</p>
+      </div>
+      <div><h5 class="text-white font-semibold text-sm mb-3">Services</h5><ul class="space-y-2 text-sm text-slate-mid"><li><a href="#services" class="hover:text-teal-mid">Learning Support</a></li><li><a href="#services" class="hover:text-teal-mid">Research Tools</a></li><li><a href="#services" class="hover:text-teal-mid">Wellbeing</a></li><li><a href="#services" class="hover:text-teal-mid">Field Practice</a></li></ul></div>
+      <div><h5 class="text-white font-semibold text-sm mb-3">AAMU</h5><ul class="space-y-2 text-sm text-slate-mid"><li><a href="https://www.aamu.edu/academics/undergraduate-studies/bachelor-arts-social-work.html" target="_blank" class="hover:text-teal-mid">BSW Program</a></li><li><a href="https://www.aamu.edu/academics/graduate-studies/master-social-work.html" target="_blank" class="hover:text-teal-mid">MSW Program</a></li><li><a href="https://www.aamu.edu/academics/colleges/education-humanities-behavioral-sciences/departments/social-work/field-education.html" target="_blank" class="hover:text-teal-mid">Field Education</a></li><li><a href="https://www.aamu.edu/academics/colleges/education-humanities-behavioral-sciences/departments/social-work/accreditation.html" target="_blank" class="hover:text-teal-mid">Accreditation</a></li></ul></div>
+      <div><h5 class="text-white font-semibold text-sm mb-3">Licensing</h5><ul class="space-y-2 text-sm text-slate-mid"><li><a href="https://socialwork.alabama.gov/" target="_blank" class="hover:text-teal-mid">Alabama ABSWE</a></li><li><a href="https://www.aswb.org/exam/" target="_blank" class="hover:text-teal-mid">ASWB Exams</a></li><li><a href="https://www.cswe.org" target="_blank" class="hover:text-teal-mid">CSWE</a></li><li><a href="https://www.socialworkers.org" target="_blank" class="hover:text-teal-mid">NASW</a></li></ul></div>
+    </div>
+    <div class="border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
+      <p class="text-slate-mid text-xs">© 2025 SocialMind AI. Built in partnership with AAMU Social Work Education values.</p>
+      <p class="text-slate-mid text-xs">CSWE-Aligned · Trauma-Informed · Ethics-First · Alabama ABSWE Compliant</p>
+    </div>
+  </div>
+</footer>
 
-        get filteredServices() {
-          if (this.activeFilter === 'all') return this.services;
-          return this.services.filter(s => s.pillar === this.activeFilter);
-        },
+<!-- TRY NOW MODAL -->
+<div id="tryModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4" onclick="if(event.target===this)closeTryModal()">
+  <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+    <div class="flex items-center justify-between p-6 border-b border-slate-light">
+      <div>
+        <h3 style="font-family:'Playfair Display',serif" class="text-xl text-slate" id="tryModalTitle">Try SocialMind AI</h3>
+        <p class="text-xs text-slate-mid mt-0.5" id="tryModalSub">Interactive simulation</p>
+      </div>
+      <button onclick="closeTryModal()" class="text-slate-mid hover:text-slate w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-light transition-all">✕</button>
+    </div>
+    <!-- Workflow steps -->
+    <div class="p-6 border-b border-slate-light overflow-y-auto" id="workflowSteps" style="max-height:160px">
+    </div>
+    <!-- Chat window -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-4 min-h-[200px]" id="chatWindow">
+      <div class="text-center text-slate-mid text-sm py-8">Select a prompt below to simulate an AI interaction →</div>
+    </div>
+    <!-- Prompt buttons -->
+    <div class="p-4 border-t border-slate-light bg-slate-light/30">
+      <p class="text-xs font-semibold text-slate-mid mb-2 uppercase tracking-wide">Sample Prompts:</p>
+      <div class="flex flex-wrap gap-2" id="samplePrompts"></div>
+    </div>
+  </div>
+</div>
 
-        filterPillar(id) {
-          this.activeFilter = id;
-        },
+<!-- SERVICE DETAIL MODAL -->
+<div id="svcModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4" onclick="if(event.target===this)closeSvcModal()">
+  <div class="bg-white rounded-3xl w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl" id="svcModalContent"></div>
+</div>
 
-        openModal(svc) {
-          this.modalSvc = svc;
-        },
+<!-- COURSE DETAIL MODAL -->
+<div id="courseModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4" onclick="if(event.target===this)document.getElementById('courseModal').classList.add('hidden')">
+  <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl" id="courseModalContent"></div>
+</div>
 
-        scrollTo(id) {
-          document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-        }
-      };
+<script>
+// ════════════════════════════════════════
+//  STATIC DATA
+// ════════════════════════════════════════
+const DATA = {
+
+  pillars: [
+    {id:"learning", name:"Learning", tagline:"Personalized academic guidance, critical thinking & assessment prep.", icon:"📚", count:3, borderColor:"#0D6E74", textColor:"#07474B", iconBg:"#E6F4F5"},
+    {id:"research", name:"Research", tagline:"EBP literacy, research methodology, and data analysis skills.", icon:"🔬", count:3, borderColor:"#2E6DA4", textColor:"#2E6DA4", iconBg:"#EAF1FB"},
+    {id:"wellbeing", name:"Wellbeing", tagline:"Stress management, emotional resilience & professional identity.", icon:"💚", count:3, borderColor:"#3A7D44", textColor:"#3A7D44", iconBg:"#EDF6EF"},
+    {id:"practice", name:"Theory to Practice", tagline:"Field placement, intervention planning & documentation skills.", icon:"🏛️", count:4, borderColor:"#6E3D8A", textColor:"#6E3D8A", iconBg:"#F3ECF7"},
+  ],
+
+  services: [
+    {
+      id:"L1", code:"L1", pillar:"learning", icon:"🎯", barBg:"bg-teal", dotBg:"bg-teal", iconBg:"bg-teal-light",
+      title:"Personalized Learning Support",
+      summary:"Adaptive academic guidance tailored to each student's pace, style, and curriculum stage.",
+      description:"SocialMind AI delivers curriculum-aligned explanations and adapts to your individual learning profile. Whether you prefer visual walkthroughs, case-based scenarios, or direct concept explanations, the AI meets you where you are.",
+      outcomes:["Curriculum-aligned explanations across all social work modules","Adapts content complexity to individual learning levels","Identifies knowledge gaps and recommends targeted study resources","Supports multiple learning modalities — visual, textual, case-based"],
+      tags:["Adaptive Learning","Curriculum Alignment","Knowledge Gaps","Student-Centered"],
+      workflow:["📥 Student submits learning topic or question","🔍 AI analyzes knowledge level & learning style","📋 Personalized content plan generated","✅ Explanation delivered with examples & checks"],
+      prompts:[
+        {label:"Explain HBSE I concepts", msg:"Can you explain the key theories in Human Behavior and the Social Environment I (SWK 520)?", response:"Great question! In **SWK 520** at AAMU, you'll work with the **EPSE Framework** (Ecological, Problem-Solving, and Empowerment perspectives). Here's a breakdown:\n\n🌍 **Ecological Perspective** — Views the person within their environment. Bronfenbrenner's bioecological model shows how microsystems (family), mesosystems (school+family), exosystems (work), and macrosystems (culture) all shape development.\n\n⚙️ **Problem-Solving Model** — Follows a structured process: (1) Define the problem, (2) Collect data, (3) Assess & set goals, (4) Intervene, (5) Evaluate outcomes.\n\n💪 **Empowerment Perspective** — Focuses on identifying strengths in clients, not just deficits. Ask: 'What resources does this person already have?'\n\n**Key theorist to know:** Urie Bronfenbrenner (ecological), Helen Harris Perlman (problem-solving), Barbara Solomon (empowerment). These will appear on your ASWB exam!\n\nWould you like practice questions on any of these frameworks?"},
+        {label:"Study plan for SWK 630", msg:"Create a 2-week study plan for SWK 630 Needs Assessment and Program Evaluation.", response:"Here's your **2-Week Study Plan for SWK 630** 📅\n\n**Week 1: Foundations**\n📌 Days 1-2: Review needs assessment models (Windshield Survey, Key Informant Interviews, Community Forum)\n📌 Days 3-4: Study research ethics for needs assessments — IRB, informed consent, community consent\n📌 Days 5-6: Practice writing a problem statement using the SMART format\n📌 Day 7: Review and quiz yourself on Week 1 content\n\n**Week 2: Program Evaluation**\n📌 Days 8-9: Logic Models — inputs, activities, outputs, outcomes, impact\n📌 Days 10-11: Evaluation designs — formative vs. summative, process vs. outcome evaluation\n📌 Days 12-13: Analyze a real program evaluation (Head Start, TANF reports)\n📌 Day 14: Full practice assessment + self-evaluation\n\n📖 Key texts: Rossi et al., *Evaluation: A Systematic Approach*; Royse et al., *Program Evaluation: An Introduction*\n\nShall I generate practice questions for any section?"},
+      ]
+    },
+    {
+      id:"L2", code:"L2", pillar:"learning", icon:"📝", barBg:"bg-teal", dotBg:"bg-teal", iconBg:"bg-teal-light",
+      title:"Assessment & Exam Preparation",
+      summary:"Build confidence for assignments, ASWB licensing exams, and course evaluations.",
+      description:"From ASWB bachelors to clinical exam prep, SocialMind AI generates practice questions, provides feedback on written work, and helps you build a personalized study strategy aligned to CSWE competencies.",
+      outcomes:["ASWB-style practice questions across all content areas","Detailed feedback on written assignments and case analyses","Personalized study planning for BSW and MSW comprehensive exams","Progress tracking with highlighted improvement areas"],
+      tags:["ASWB Prep","CSWE Competencies","Assignment Feedback","Exam Strategy"],
+      workflow:["🎯 Student selects exam area or topic","📋 AI generates practice questions","🔄 Student answers & receives immediate feedback","📊 Performance tracked and weak areas identified","📅 Tailored study schedule created"],
+      prompts:[
+        {label:"ASWB practice questions", msg:"Give me 3 ASWB-style practice questions on human behavior.", response:"Here are **3 ASWB Masters-Level Practice Questions** on Human Behavior:\n\n---\n**Question 1:** A social worker is meeting with a 16-year-old who has been truant from school. Using Erikson's psychosocial stages, which developmental conflict is this adolescent most likely navigating?\n\nA) Industry vs. Inferiority\n**B) Identity vs. Role Confusion ✓**\nC) Intimacy vs. Isolation\nD) Generativity vs. Stagnation\n\n*Rationale:* Erikson's Stage 5 (ages 12-18) involves forming a personal identity vs. role confusion — highly relevant to adolescent risk behaviors.\n\n---\n**Question 2:** Which systems theory concept describes the tendency of family systems to resist change and maintain stability?\n\nA) Differentiation\n**B) Homeostasis ✓**\nC) Triangulation\nD) Enmeshment\n\n*Rationale:* Homeostasis is the system's drive to maintain its current state — even when the current state is dysfunctional.\n\n---\n**Question 3:** A social worker uses the strengths perspective. Which response BEST reflects this approach?\n\nA) 'Let's identify what went wrong in your childhood.'\n**B) 'What has helped you cope with challenges in the past?' ✓**\nC) 'I'll diagnose your issues and create a treatment plan.'\nD) 'Your family is dysfunctional based on this assessment.'\n\n*Rationale:* The strengths perspective focuses on resilience, resources, and client capacity.\n\nWant more questions on attachment theory, trauma, or social systems?"},
+        {label:"Essay feedback", msg:"Review my thesis: 'The ecological perspective is the most useful framework for social work practice with minority communities.'", response:"**Thesis Review — Feedback from SocialMind AI** 📝\n\n**Your Thesis:** 'The ecological perspective is the most useful framework for social work practice with minority communities.'\n\n✅ **Strengths:**\n• Clear, arguable claim\n• Engages with a central SW framework\n• Has practice relevance for diverse populations\n\n⚠️ **Areas to Strengthen:**\n\n1. **Over-broad claim** — 'most useful' is comparative without defining what you're comparing against. Consider: '...offers distinct advantages over deficit-based models...'\n\n2. **Define your terms** — What makes a framework 'useful'? Effectiveness? Cultural fit? Empowerment potential?\n\n3. **Specificity on 'minority communities'** — This term is broad. Consider focusing: 'African American communities in rural Alabama' (relevant to AAMU's mission)\n\n**Revised Suggestion:** 'The ecological perspective, with its emphasis on contextual factors and systemic inequity, provides a more culturally affirming framework for social work practice with historically marginalized communities than deficit-oriented models.'\n\nThis is stronger because it makes a comparative claim, names your evaluative criteria (culturally affirming), and acknowledges history. Shall I help you build your argument outline?"},
+      ]
+    },
+    {
+      id:"L3", code:"L3", pillar:"learning", icon:"🧠", barBg:"bg-teal", dotBg:"bg-teal", iconBg:"bg-teal-light",
+      title:"Critical Thinking Development",
+      summary:"Foster analytical, ethical, and reflective thinking skills essential to social work.",
+      description:"Using Socratic questioning, ethical case scenarios drawn from the NASW Code of Ethics, and structured reflection tools, SocialMind AI helps students develop the analytical depth to see systems, not just symptoms.",
+      outcomes:["Socratic dialogue on complex social work concepts","Ethical dilemma simulations using NASW Code of Ethics","Structured reflective journaling prompts","Multi-perspective analysis including race, class, gender, and systems"],
+      tags:["Ethics","NASW","Reflective Practice","Systems Thinking","Anti-Oppressive"],
+      workflow:["🎭 AI presents ethical dilemma or case","💬 Student explores decision options","⚖️ NASW Code of Ethics applied","🔄 Multiple perspectives examined","📓 Reflection prompt generated"],
+      prompts:[
+        {label:"Ethical dilemma simulation", msg:"Present me with an ethical dilemma involving client confidentiality.", response:"**Ethical Dilemma Simulation — NASW Standards** ⚖️\n\n---\n**SCENARIO:**\nYou are a social worker at a community mental health center in Huntsville, AL. Your client, Marcus (28), has been in treatment for PTSD following a violent incident. During session, Marcus discloses that he has purchased a firearm and is 'thinking about' confronting the person he believes harmed him. He has not made a specific threat, and Alabama law does not mandate disclosure for non-specific threats.\n\n**Ethical Tensions at Play:**\n• NASW Standard 1.07 — **Client Confidentiality** (protect client's private disclosures)\n• NASW Standard 1.01 — **Commitment to Clients** (client wellbeing is priority)\n• Duty to Warn vs. Protect (Tarasoff implications, even without Alabama mandate)\n• Preserving therapeutic alliance vs. safety concerns\n\n**Questions for Reflection:**\n1. What additional information would you need to assess risk?\n2. Does an identifiable potential victim exist?\n3. How does cultural context (AAMU's mission with historically marginalized communities) affect your approach?\n4. What supervision and documentation steps should you take?\n\n**NASW Code Reference:** Section 1.07(c) — SW may disclose confidential information when necessary to prevent serious, foreseeable, imminent harm to client or others.\n\nWhat action would you take first? Let's work through your reasoning."},
+      ]
+    },
+    {
+      id:"R1", code:"R1", pillar:"research", icon:"🔍", barBg:"bg-blue-500", dotBg:"bg-blue-500", iconBg:"bg-blue-50",
+      title:"Research Literacy & Methodology",
+      summary:"Build strong evidence-based practice foundations aligned to AAMU's research curriculum.",
+      description:"From SWK 630 Needs Assessment to Ph.D.-level research design, SocialMind AI guides students through qualitative, quantitative, and mixed methods approaches, literature searches, and ethical research principles.",
+      outcomes:["Qualitative, quantitative, and mixed methods explanations","Literature review strategy, database navigation, and source evaluation","APA formatting, citation management, and academic writing","IRB process, informed consent, and community-based research ethics"],
+      tags:["Qualitative","Quantitative","APA","IRB","Literature Review"],
+      workflow:["📚 Identify research question","🔍 Guide database search (PsycINFO, Social Work Abstracts)","📑 Evaluate and synthesize sources","📝 Structure literature review","✅ Apply to practice context"],
+      prompts:[
+        {label:"Help find research on trauma", msg:"Help me find research on trauma-informed care for Black youth in Alabama.", response:"**Research Support: Trauma-Informed Care & Black Youth in Alabama** 🔍\n\n**Recommended Search Strategy:**\nDatabases: **Social Work Abstracts, PsycINFO, PubMed, EBSCO**\n\nSearch String: ('trauma-informed care' OR 'TIC') AND ('African American' OR 'Black') AND ('youth' OR 'adolescent') AND ('child welfare' OR 'mental health')\n\n**Key Studies to Start With:**\n📄 Ko, S.J., et al. (2008). Creating trauma-informed systems. *Child Welfare*, 87(1). — Foundational TIC framework\n📄 Dillard, D. (2021). Racial disparities in trauma screening. *Child Abuse & Neglect*. — Addresses assessment bias\n📄 SAMHSA (2014). *TIC in Behavioral Health Services* — Free government resource\n\n**Relevant to AAMU's Context:**\n• Child welfare disparities in Alabama — DHR data shows Black children overrepresented\n• Community Mental Health concentration at AAMU directly addresses this population\n• Alabama Appleseed Center for Law & Justice has local reports\n\n**For SWK 630:**\nThis topic works perfectly for a needs assessment. Consider: What TIC services exist in Madison County (Huntsville) vs. rural Black Belt counties? Use a comparative design.\n\n**APA Citation Example:**\nKo, S. J., Ford, J. D., Kassam-Adams, N., Berkowitz, S. J., Wilson, C., Wong, M., Brymer, M. J., & Layne, C. M. (2008). Creating trauma-informed systems: Child welfare, education, first responders, health care, juvenile justice. *Professional Psychology: Research and Practice*, 39(4), 396–404.\n\nWant me to help you build a full literature review outline?"},
+      ]
+    },
+    {
+      id:"R2", code:"R2", pillar:"research", icon:"📊", barBg:"bg-blue-500", dotBg:"bg-blue-500", iconBg:"bg-blue-50",
+      title:"Evidence-Based Practice (EBP)",
+      summary:"Connect peer-reviewed research to client assessment and intervention decisions.",
+      description:"EBP is central to AAMU's MSW philosophy. SocialMind AI helps you locate, critically appraise, and apply the best evidence to real client scenarios — bridging academic research and practice wisdom in community mental health and child welfare settings.",
+      outcomes:["Locate and interpret peer-reviewed research for practice","Translate empirical findings into clinical insights","Systematic review and critical appraisal of interventions","Data-driven policy analysis and program evaluation"],
+      tags:["EBP","Systematic Review","Critical Appraisal","Child Welfare","Mental Health"],
+      workflow:["❓ Clinical question framed (PICO format)","🔎 Search evidence base","📊 Appraise study quality (RCT, quasi-experimental)","🔗 Apply evidence to client context","📋 Document rationale"],
+      prompts:[
+        {label:"EBP for depression intervention", msg:"What evidence-based interventions should I use for a client with major depressive disorder?", response:"**EBP Guidance: Major Depressive Disorder Interventions** 📊\n\n**Top Evidence-Based Approaches (Strong Evidence Base):**\n\n🟢 **Cognitive Behavioral Therapy (CBT)** — Grade A Evidence\n• 200+ RCTs supporting efficacy\n• Targets cognitive distortions and behavioral activation\n• In social work: focus on social-environmental triggers\n\n🟢 **Behavioral Activation (BA)** — Grade A Evidence\n• Simpler than full CBT; high effectiveness\n• Ideal for clients who struggle with engagement\n• Particularly effective for Black clients (better fit, less stigma)\n\n🟡 **Motivational Interviewing (MI)** — Grade B Evidence\n• Use to address ambivalence about treatment\n• Especially useful in community mental health (AAMU MSW concentration)\n\n🟡 **Interpersonal Therapy (IPT)** — Grade B Evidence\n• Focuses on relationship patterns contributing to depression\n• Strong fit for family and child welfare contexts\n\n**Cultural Considerations (Critical for AAMU Students):**\n⚠️ Most RCTs underrepresent Black/minority clients — apply with cultural humility\n⚠️ Church/faith as resource in Alabama communities\n⚠️ Historical trauma and medical mistrust — therapeutic alliance is foundational\n\n**PICO Format for Your Notes:**\nP: Adults with MDD | I: CBT | C: No treatment | O: Reduction in PHQ-9 scores\n\nSource: APA Division 12 Society of Clinical Psychology — Treatment Recommendations Database (div12.org)\n\nWant me to help you write a treatment plan using these approaches?"},
+      ]
+    },
+    {
+      id:"R3", code:"R3", pillar:"research", icon:"📈", barBg:"bg-blue-500", dotBg:"bg-blue-500", iconBg:"bg-blue-50",
+      title:"Data Analysis Support",
+      summary:"Develop competency in interpreting social work data, statistics, and community assessments.",
+      description:"Numbers tell human stories. SocialMind AI demystifies data analysis for social work students — from descriptive statistics to community needs assessments — building confidence to become data-informed practitioners in Alabama communities.",
+      outcomes:["Basic statistical concepts and analysis interpretation","Community needs assessment data interpretation","SPSS and qualitative coding tool guidance","Social determinants data and population health metrics"],
+      tags:["Statistics","SPSS","Needs Assessment","Population Health","Program Data"],
+      workflow:["📥 Student uploads or describes dataset","📊 AI explains relevant statistical concepts","🔢 Guided interpretation of results","📝 Practice writing a data section","✅ Connect findings to practice implications"],
+      prompts:[
+        {label:"Interpret survey data", msg:"I have survey data showing 65% of clients report housing instability. How do I present this in my program evaluation?", response:"**Presenting Housing Instability Data in Program Evaluation** 📈\n\n**Your Finding:** 65% of clients (n=?) report housing instability\n\n**Step 1: Contextualize with Benchmarks**\n• Alabama statewide rate: ~18% housing instability (HUD, 2023)\n• Compare to your agency's prior year data\n• Disaggregate: Is rate higher for certain demographics?\n\n**Step 2: Present in Report (APA Style)**\n> 'A majority of survey respondents (65%, n=XX) reported experiencing housing instability in the 30 days preceding service intake. This rate significantly exceeds the state average of 18% (HUD, 2023), indicating a high-need client population with complex social determinants.'\n\n**Step 3: Visualize**\n📊 Use a simple bar chart comparing your 65% to state average\n📊 If you have demographic data, use a grouped bar chart\n\n**Step 4: Connect to Logic Model**\nInput → High housing instability rate\nImplication → Agency should strengthen partnerships with housing agencies (Madison County CASA, Habitat for Humanity)\nOutcome metric → Track % with stable housing at 6-month follow-up\n\n**Step 5: Social Determinants Frame**\nLink to SDOH domains: Economic Stability domain (Healthy People 2030)\nNote intersections: housing + mental health + child welfare involvement\n\nWant help building your full results section?"},
+      ]
+    },
+    {
+      id:"W1", code:"W1", pillar:"wellbeing", icon:"🌿", barBg:"bg-sage", dotBg:"bg-sage", iconBg:"bg-sage-light",
+      title:"Stress & Burnout Prevention",
+      summary:"Protect your mental health with evidence-based self-care tools and burnout screening.",
+      description:"Social work programs are demanding by nature. SocialMind AI monitors signs of academic burnout and compassion fatigue, offering personalized self-care strategies and mindfulness check-ins tailored to the AAMU student experience.",
+      outcomes:["Evidence-based self-care strategies and wellness check-ins","Early recognition of burnout and compassion fatigue signs","Mindfulness techniques tailored to student schedules","Guidance on healthy boundaries between roles"],
+      tags:["Self-Care","Burnout","Mindfulness","Compassion Fatigue","Boundaries"],
+      workflow:["💬 Student completes wellbeing check-in","📊 AI identifies risk indicators","🌿 Personalized self-care plan offered","📅 Wellbeing reminders scheduled","🔗 Professional support resources provided if needed"],
+      prompts:[
+        {label:"I'm feeling overwhelmed", msg:"I have field placement, 3 papers due, and I'm feeling completely overwhelmed and burnt out.", response:"**I hear you — and what you're feeling is real and valid.** 💚\n\nWhat you're describing sounds like academic overwhelm combined with early compassion fatigue — completely understandable given the emotional weight of field placement on top of academic demands. You are not alone in this.\n\n**Let's start with right now:**\n🫁 Take three slow breaths (4 counts in, hold 2, 6 counts out). This activates your parasympathetic nervous system.\n\n**Triage your load:**\n📋 Write out your 3 papers + their deadlines\n🏥 Note your field hours this week\n⭐ Ask: Which ONE thing matters most in the next 24 hours?\n\n**For the next week:**\n• Block 'no-work zones' — even 2 hours/day with no academic work\n• Use the Pomodoro method for papers: 25 min work, 5 min break\n• Talk to your field supervisor about your experience — this IS part of learning\n\n**Signs this is becoming more serious (seek support):**\n⚠️ Sleep disruption lasting more than a week\n⚠️ Emotional numbness or detachment from clients\n⚠️ Feeling like 'nothing matters'\n\n**AAMU Student Support:**\n📞 AAMU Counseling Center: (256) 372-5723\n📍 Normal Hall — free, confidential counseling\n\nYou got into social work because you care deeply. That same heart needs care too. What feels most manageable to tackle today?"},
+      ]
+    },
+    {
+      id:"W2", code:"W2", pillar:"wellbeing", icon:"🫂", barBg:"bg-sage", dotBg:"bg-sage", iconBg:"bg-sage-light",
+      title:"Emotional Processing & Resilience",
+      summary:"A safe space for debriefing challenging client and fieldwork experiences.",
+      description:"Working with vulnerable populations is emotionally weighty. SocialMind AI provides a trauma-informed space for reflection after difficult sessions, validating secondary traumatic stress and building sustained compassion.",
+      outcomes:["Safe, non-judgmental space for processing fieldwork experiences","Structured reflective debriefing after difficult interactions","Normalize emotional labor and validate student experiences","Connect to counseling and support services when needed"],
+      tags:["Secondary Trauma","Debriefing","Emotional Processing","Resilience"],
+      workflow:["📖 Student describes difficult experience","💬 AI provides reflective listening","🔍 Guided debrief questions asked","💡 Insights and coping strategies offered","🔗 Professional support flagged if needed"],
+      prompts:[
+        {label:"Debrief a difficult client session", msg:"I just had a session with a child abuse victim and I'm really struggling. Can you help me process?", response:"**I'm glad you reached out. What you're feeling matters.** 🫂\n\nWorking with child abuse survivors is one of the most emotionally demanding areas in social work. The fact that you're feeling this deeply shows you're fully present with your clients — and that's also what makes it hard.\n\n**Guided Debrief Questions:**\n1. *What specific moment in the session affected you most?*\n2. *What emotions are you noticing right now — in your body, in your thoughts?*\n3. *Is there anything from your own life that this session touched?* (That's okay — it's human)\n4. *What did you do WELL in that session?* (Even imperfect sessions have strengths)\n\n**What you may be experiencing:**\nWhat you're describing is consistent with **secondary traumatic stress (STS)** — a normal, occupational response to empathic engagement with trauma survivors. It is NOT a sign of weakness or being 'bad at the job.' It is a sign you are doing the job.\n\n**Right now:**\n• You do not need to be 'over it' — give yourself permission to feel this\n• Ground yourself: Name 5 things you can see, 4 you can touch, 3 you can hear\n• Write in your reflective journal before you go to sleep\n\n**Please share with your field supervisor at your next supervisory session.** Processing with a licensed professional is part of your training.\n\n📞 If you need to talk to someone now: **AAMU Counseling Center (256) 372-5723** or **Crisis Text Line: text HOME to 741741**\n\nYou are doing important work. Are you safe right now?"},
+      ]
+    },
+    {
+      id:"W3", code:"W3", pillar:"wellbeing", icon:"🌟", barBg:"bg-sage", dotBg:"bg-sage", iconBg:"bg-sage-light",
+      title:"Professional Identity Formation",
+      summary:"Nurture a positive, sustainable professional self-concept rooted in your values.",
+      description:"Who you are as a social worker matters. SocialMind AI guides you in articulating professional values, examining your positionality, and developing the self-awareness that marks great AAMU graduates.",
+      outcomes:["Articulate and strengthen professional values and motivations","Develop healthy boundaries and professional self-awareness","Guided positionality and privilege reflection","Celebrate growth milestones and achievements"],
+      tags:["Professional Identity","Positionality","Self-Awareness","Values"],
+      workflow:["💭 Reflection prompt presented","✍️ Student responds to guided questions","🪞 AI offers perspective and insight","🌱 Growth areas identified","🏆 Achievements recognized"],
+      prompts:[
+        {label:"Explore my professional values", msg:"Help me identify my core social work values and how they connect to AAMU's mission.", response:"**Exploring Your Professional Social Work Identity** 🌟\n\nLet's connect your personal values to AAMU's mission — *preparing graduates for ethical practice with vulnerable, underserved, and oppressed populations in rural and urban communities.*\n\n**Reflection Exercise — Answer These:**\n1. *Why did you choose social work over other helping professions?*\n2. *What community or population are you most drawn to serve?*\n3. *Think of a moment when you witnessed injustice. What did you feel? What did you do?*\n\n**The NASW Core Values and What They Mean for You:**\n\n⚖️ **Social Justice** — AAMU's HBCU roots make this particularly meaningful. Many of your clients will face the same systemic barriers your faculty and predecessors fought against.\n\n🤝 **Dignity & Worth of the Person** — Every person you serve has inherent value, regardless of history, behavior, or circumstance.\n\n🌐 **Importance of Human Relationships** — Change happens in relationship. You are not a technician — you are a partner in your clients' lives.\n\n🎓 **Competence** — Commit to lifelong learning. The ASWB exam is one step; your education never stops.\n\n**Positionality Check:**\nYour race, class, gender, faith, and life experiences shape how you see clients. This isn't a problem — it's information. Ask: *How might my background help me connect with clients? Where might I have blind spots?*\n\n**Your AAMU Legacy:** You join a lineage of AAMU social work graduates serving Alabama communities since 1979. That's a powerful identity to step into.\n\nWhat value resonates most with you right now?"},
+      ]
+    },
+    {
+      id:"P1", code:"P1", pillar:"practice", icon:"🔗", barBg:"bg-plum", dotBg:"bg-plum", iconBg:"bg-plum-light",
+      title:"Theory-to-Practice Translation",
+      summary:"Bridge classroom frameworks to real-world application through guided case scenarios.",
+      description:"SocialMind AI generates realistic case scenarios, helps you apply AAMU's EPSE framework, CBT, trauma-informed care, and other models to real client situations, building the bridge from SWK classroom to field placement.",
+      outcomes:["Apply EPSE framework, CBT, TIC to realistic case scenarios","Connect SWK coursework to fieldwork observations","Realistic practice scenarios for skill rehearsal","Guide use of genograms, ecomaps, and risk assessments"],
+      tags:["EPSE Framework","CBT","TIC","Genograms","Case Scenarios"],
+      workflow:["📋 Case scenario presented","🔍 Student identifies relevant frameworks","🔗 AI connects theory to practice","💡 Guided intervention planning","✅ Reflective debrief"],
+      prompts:[
+        {label:"Apply EPSE to a case", msg:"Apply the AAMU EPSE framework to a single mother dealing with housing instability and depression.", response:"**EPSE Framework Case Application** 🔗\n\n**CLIENT:** Maria, 32, single mother of two (ages 4 & 7), currently housed in a motel (Section 8 voucher expired), presenting with depressive symptoms.\n\n---\n**🌍 ECOLOGICAL PERSPECTIVE:**\nMap Maria's systems:\n• **Microsystem:** Maria + children; absent ex-partner; her mother (limited support)\n• **Mesosystem:** Kids' school + Maria's work schedule conflicts (missed meetings)\n• **Exosystem:** Housing authority delays; limited childcare options\n• **Macrosystem:** Racial wealth gap; gender wage gap; Alabama housing policy\n\n*SW Action: Draw an ecomap with Maria. Ask: 'Which relationships give you energy? Which take it away?'*\n\n---\n**⚙️ PROBLEM-SOLVING MODEL:**\n1. **Define problem:** Housing + depression are interacting — which comes first? (likely housing → depression)\n2. **Collect data:** PHQ-9 assessment (depression severity), housing timeline, income/benefits\n3. **Set goals:** SMART goal — 'Maria will obtain permanent housing within 60 days using community resources.'\n4. **Intervene:** Link to HACA (Huntsville Housing Authority), 211 Alabama, Community Action Agency\n5. **Evaluate:** 30-day check-in on housing status + PHQ-9 re-administration\n\n---\n**💪 EMPOWERMENT PERSPECTIVE:**\n*Ask Maria:* 'You have kept your children housed and in school through this whole crisis. How did you do that?'\n\nStrengths identified: Persistence, parenting commitment, employment retention\nGoal: Build on existing strengths rather than pathologizing her situation\n\n---\n**Relevant AAMU Course Connections:**\n• SWK 520 (HBSE I) — ecological systems theory\n• SWK 600 (Intervention Strategies) — intervention planning\n• MSW Concentration: Family & Child Welfare\n\nReady to build the full intervention plan?"},
+      ]
+    },
+    {
+      id:"P2", code:"P2", pillar:"practice", icon:"🏥", barBg:"bg-plum", dotBg:"bg-plum", iconBg:"bg-plum-light",
+      title:"Internship & Field Placement Support",
+      summary:"Maximize your performance and learning during AAMU internship and field placement.",
+      description:"Field placement is where everything comes together. SocialMind AI supports learning contract development, supervision prep, agency navigation, and integrating feedback — directly aligned to AAMU's field education requirements.",
+      outcomes:["Develop learning contracts aligned to CSWE competencies","Supervision preparation and reflective note writing","Navigate agency policies and professional communication","Integrate supervisor and client feedback for growth"],
+      tags:["Field Placement","Learning Contracts","Supervision","CSWE Competencies"],
+      workflow:["📝 Student shares field placement context","📋 AI assists with learning contract goals","💬 Supervision prep questions generated","📓 Reflective notes guided","✅ CSWE competency mapping completed"],
+      prompts:[
+        {label:"Write a learning contract goal", msg:"Help me write a learning contract goal for my mental health field placement.", response:"**Learning Contract Goal — CSWE Competency Aligned** 📋\n\n**Field Placement:** Community Mental Health Center\n**CSWE Competency 6:** Engage with Individuals, Families, Groups, Organizations, and Communities\n\n---\n**GOAL STATEMENT:**\n'By the end of the semester, I will demonstrate competency in conducting biopsychosocial assessments with adult clients presenting with co-occurring mental health and substance use disorders, as evidenced by completing three supervised assessments with documented field supervisor feedback.'\n\n**Breaking it down — SMART:**\n✅ **Specific:** Biopsychosocial assessments, co-occurring disorders\n✅ **Measurable:** Three completed assessments\n✅ **Achievable:** Supervised setting with feedback\n✅ **Relevant:** Directly tied to Community Mental Health concentration\n✅ **Time-bound:** By end of semester\n\n**Learning Activities:**\n1. Shadow supervisor for 2 assessment sessions in weeks 1-2\n2. Complete assessments independently in weeks 3-10 with supervisory debrief\n3. Review AAMU SWK 600 content on assessment frameworks\n4. Read SAMHSA's TIP 59 on co-occurring disorders\n\n**Evaluation Method:**\nField supervisor completes AAMU Field Evaluation rubric at midterm and final; student completes self-evaluation using same rubric\n\n**CSWE Behaviors Addressed:**\n• 6a: Apply knowledge of human behavior in assessment\n• 6b: Develop mutually agreed-upon intervention goals\n\nWant me to write 2-3 additional goals for other CSWE competencies?"},
+      ]
+    },
+    {
+      id:"P3", code:"P3", pillar:"practice", icon:"🤝", barBg:"bg-plum", dotBg:"bg-plum", iconBg:"bg-plum-light",
+      title:"Intervention Planning & Skills",
+      summary:"Build direct practice competency across micro, mezzo, and macro levels.",
+      description:"From individual therapy to community organizing, SocialMind AI coaches you across all levels of social work intervention — developing confident, culturally responsive, and anti-oppressive practice skills aligned to AAMU's EPSE framework.",
+      outcomes:["Coach micro, mezzo, and macro intervention strategies","Develop measurable treatment and service plans","Crisis intervention, de-escalation, and safety planning","Culturally responsive and anti-oppressive practice"],
+      tags:["Micro Practice","Macro Practice","Crisis Intervention","Anti-Oppressive","EPSE"],
+      workflow:["📋 Client presenting problem identified","🔍 Level of intervention determined (micro/mezzo/macro)","📝 Intervention plan drafted","💡 Cultural and systemic factors integrated","✅ Evaluation metrics established"],
+      prompts:[
+        {label:"Safety planning for a client", msg:"Help me create a safety plan for a client experiencing suicidal ideation.", response:"**Safety Planning Guide — Crisis Intervention** 🤝\n\n⚠️ **Before you begin:** If your client is in immediate danger, call 988 (Suicide & Crisis Lifeline) or 911, and follow your agency's emergency protocol. Always consult your supervisor.\n\n---\n**Stanley-Brown Safety Planning Intervention (SPI) — 6 Steps:**\n\n**Step 1: Warning Signs**\nWork WITH the client: 'What thoughts, feelings, or situations tell you that a crisis may be coming?'\n*Document in client's own words (e.g., 'When I stop answering texts and stay in bed all day')*\n\n**Step 2: Internal Coping Strategies**\n'What can you do on your own, without contacting anyone, to take your mind off these thoughts?'\n*Examples: Walk to the mailbox, watch a specific show, cold water on face*\n\n**Step 3: Social Contacts (Distraction)**\nPeople and places that can provide distraction (not necessarily discuss the crisis)\n*Get specific names and contact info — vague plans don't work*\n\n**Step 4: People Who Can Help**\nTrusted individuals the client can be honest with about suicidal thoughts\n*Include a family member and a non-family trusted person*\n\n**Step 5: Professional Resources**\n• Therapist/Social Worker name & number (YOU)\n• Crisis line: 988\n• Emergency: 911\n• Local: WellStone (Huntsville, AL) — (256) 716-1000\n\n**Step 6: Making the Environment Safe**\n'Do you have access to firearms, medications, or other means?' (Lethal means counseling)\n*Involve family if consented — safe storage, temporary removal*\n\n---\n**Clinical Notes:** Document all 6 steps, client's stated agreement, and your clinical assessment. Alert field supervisor immediately after session.\n\nWant to practice a safety planning roleplay?"},
+      ]
+    },
+    {
+      id:"P4", code:"P4", pillar:"practice", icon:"📋", barBg:"bg-plum", dotBg:"bg-plum", iconBg:"bg-plum-light",
+      title:"Documentation & Professional Writing",
+      summary:"Master the documentation skills that define professional social work practice.",
+      description:"Clear, accurate documentation protects clients and practitioners alike. SocialMind AI guides you through every documentation format — SOAP notes, psychosocial assessments, DAP, and grant writing — with HIPAA and NASW ethics compliance built in.",
+      outcomes:["Case notes, progress reports, and psychosocial assessments","SOAP and DAP format documentation","Grant writing, advocacy letters, and community reports","HIPAA, confidentiality, and ethical documentation compliance"],
+      tags:["SOAP Notes","HIPAA","Case Notes","Grant Writing","DAP Format"],
+      workflow:["📝 Student describes session or need","📋 AI selects appropriate format","✍️ Guided documentation written","⚖️ Ethical/HIPAA review","✅ Final document refined"],
+      prompts:[
+        {label:"Write a SOAP note", msg:"Help me write a SOAP note for a session with a 45-year-old client presenting with anxiety and job loss.", response:"**SOAP Note — Session Documentation** 📋\n\n*[Note: Use your agency's specific template. This is a training example.]*\n\n---\n**S — SUBJECTIVE** *(What the client reports)*\nClient is a 45-year-old African American male presenting for individual therapy session. Client reports significant anxiety symptoms including difficulty sleeping (reports 3-4 hours/night for past 2 weeks), racing thoughts, and muscle tension. Client states, 'I don't know how I'm going to pay my rent or take care of my family.' Client was laid off from manufacturing position of 12 years approximately 3 weeks ago. Denies suicidal/homicidal ideation. Denies substance use.\n\n**O — OBJECTIVE** *(What you observe)*\nClient arrived on time, appropriately dressed. Affect appeared anxious; tearful at times when discussing family financial obligations. Psychomotor agitation noted (leg bouncing, fidgeting). Speech coherent and goal-directed. GAD-7 score administered: 14/21 (Moderate Anxiety). Client maintained good eye contact.\n\n**A — ASSESSMENT** *(Clinical interpretation)*\nClient presents with moderate anxiety consistent with GAD symptom profile, precipitated by acute job loss stressor. Symptoms appear reactive (3-week onset post-layoff) vs. chronic. No prior psychiatric history reported. Protective factors: employed spouse, strong family motivation, willingness to engage in treatment. Risk level: Low. No safety concerns.\n\n**P — PLAN** *(Next steps)*\n1. Psychoeducation on anxiety and stress response — provided today\n2. Introduce behavioral activation and relaxation techniques (4-7-8 breathing, progressive muscle relaxation)\n3. Refer to Alabama Career Center (Huntsville) for unemployment benefits and job search support\n4. Schedule follow-up in 1 week\n5. Administer GAD-7 at next session to track symptom change\n6. Discuss with supervisor at weekly supervision\n\nNext session: [Date]. Clinician signature: ________________, LMSW (or Student Intern)\n\n⚠️ *HIPAA reminder: Remove all identifying information before sharing in academic settings.*\n\nWant me to convert this to DAP format instead?"},
+      ]
+    },
+  ],
+
+  courses: {
+    bsw: [
+      {code:"SWK 200", title:"Introduction to Social Work", credits:3, semester:"Fall/Spring", desc:"History, values, and ethics of the social work profession. NASW Code of Ethics, HBCU context, generalist practice overview.", concepts:["History of social work","NASW Code of Ethics","Generalist practice","Social justice","HBCU context"], readings:["Zastrow, C. (2021). Introduction to Social Work and Social Welfare. Cengage.","NASW Code of Ethics (2021 revision)","DuBois & Miley (2019). Social Work: An Empowering Profession"], keyTerms:["Generalist practice","Social justice","Empowerment","CSWE competencies"], sampleQ:"Describe how the NASW Code of Ethics principle of 'dignity and worth of the person' applies to working with clients experiencing homelessness."},
+      {code:"SWK 310", title:"Human Behavior & Social Environment I (HBSE I)", credits:3, semester:"Fall", desc:"Life cycle development through adolescence within the ecological framework. AAMU's EPSE framework introduced.", concepts:["Ecological systems theory","Bronfenbrenner's model","Lifespan development","EPSE framework","Cultural influences on development"], readings:["Hutchison, E. (2019). Dimensions of Human Behavior. SAGE.","Bronfenbrenner, U. (1979). The Ecology of Human Development","SWK 520 at MSW level corresponds to this course"], keyTerms:["Microsystem","Macrosystem","Life course perspective","Resilience","Developmental theories"], sampleQ:"Using Bronfenbrenner's ecological model, analyze the developmental factors affecting a 10-year-old Black child in a rural Alabama community."},
+      {code:"SWK 311", title:"Human Behavior & Social Environment II (HBSE II)", credits:3, semester:"Spring", desc:"Life cycle from young adulthood through aging. Families, groups, organizations, and communities as systems.", concepts:["Adult development","Aging and gerontology","Family systems","Group dynamics","Community as system"], readings:["Zastrow & Kirst-Ashman (2019). Understanding Human Behavior. Cengage.","Erikson's psychosocial stages (adult phases)","Theories of aging: disengagement, activity, continuity"], keyTerms:["Psychosocial development","Gerontology","Family homeostasis","Community organization"], sampleQ:"Apply family systems theory (Bowen) to analyze the dynamics of a multigenerational family in which a grandmother is the primary caregiver for grandchildren."},
+      {code:"SWK 301", title:"Social Welfare Policy & Services I", credits:3, semester:"Fall", desc:"Historical development of social welfare policy in the United States. Race, class, gender, and policy analysis frameworks.", concepts:["U.S. social welfare history","The New Deal & Great Society","TANF, SNAP, Medicaid","Policy analysis frameworks","Race and policy"], readings:["DiNitto, D. (2021). Social Welfare: Politics and Public Policy. Pearson.","Trattner, W.I. (1999). From Poor Law to Welfare State","Alabama DHR Annual Reports"], keyTerms:["Residual vs. institutional welfare","Means-tested programs","Entitlement programs","Social safety net"], sampleQ:"Analyze how the Personal Responsibility and Work Opportunity Reconciliation Act (1996/PRWORA) has disproportionately affected Black families in Alabama's Black Belt counties."},
+      {code:"SWK 302", title:"Social Welfare Policy & Services II", credits:3, semester:"Spring", desc:"Contemporary policy analysis, advocacy, and social work's role in policy change. Includes mental health, child welfare, and housing policy.", concepts:["Policy advocacy","Mental health parity","Child welfare policy","ADA & disability rights","Policy practice in social work"], readings:["Jansson, B. (2019). Becoming an Effective Policy Advocate. Cengage.","Affordable Care Act provisions for social work","Alabama Mental Health Code"], keyTerms:["Policy practice","Advocacy","Legislative process","Community organizing","Social change"], sampleQ:"Develop a policy brief recommending changes to Alabama's foster care re-entry policies for youth aging out of the system at 18."},
+      {code:"SWK 410", title:"Social Work Research Methods", credits:3, semester:"Fall/Spring", desc:"Applied research methods for social work practice. Quantitative and qualitative designs, program evaluation, ethics.", concepts:["Research ethics (IRB)","Quantitative vs. qualitative","Survey design","Literature review","Program evaluation basics"], readings:["Rubin & Babbie (2021). Research Methods for Social Work. Cengage.","APA Publication Manual (7th ed.)","AAMU Library databases: Social Work Abstracts, PsycINFO"], keyTerms:["Operationalization","Validity & reliability","Sampling methods","Informed consent","EBP"], sampleQ:"Design a mixed-methods research study examining barriers to mental health help-seeking among first-generation AAMU social work students."},
+      {code:"SWK 420", title:"Social Work Practice I — Individuals & Families", credits:3, semester:"Fall", desc:"Generalist practice methods with individuals, families, and groups. Engagement, assessment, intervention, evaluation.", concepts:["Generalist practice model","Engagement skills","Biopsychosocial assessment","Motivational Interviewing","CBT basics"], readings:["Hepworth, D.H. et al. (2022). Direct Social Work Practice. Cengage.","Miller & Rollnick (2013). Motivational Interviewing. Guilford.","SOAP & DAP note formats"], keyTerms:["Active listening","Reflective responses","Goal-setting","Strengths perspective","Termination"], sampleQ:"Demonstrate using a transcript format: an initial engagement session with a reluctant 15-year-old client referred by the court for truancy."},
+      {code:"SWK 421", title:"Social Work Practice II — Organizations & Communities", credits:3, semester:"Spring", desc:"Macro-level practice: community organizing, program development, administration, and policy advocacy.", concepts:["Community needs assessment","Asset-based community development","Coalition building","Grant writing basics","Nonprofit management"], readings:["Hardina, D. (2012). Interpersonal Social Work Skills for Community Practice. Springer.","McKnight & Block (2010). The Abundant Community","AAMU field placement agencies in Huntsville/Alabama"], keyTerms:["Macro practice","Community organizing","Power analysis","Logic model","Social capital"], sampleQ:"Conduct a community needs assessment outline for North Huntsville, Alabama, using at least three data collection methods."},
+      {code:"SWK 450/460", title:"Field Instruction I & II", credits:"4+4", semester:"Senior Year", desc:"Supervised practicum experience in a social work agency. 400+ hours of direct practice with agency field instructor.", concepts:["Professional identity","Ethical practice in the field","Learning contract competencies","Supervisory relationship","Reflective practice"], readings:["AAMU BSW Field Manual","NASW Standards for Field Education","Garthwait, C. (2017). The Social Work Practicum. Pearson"], keyTerms:["Field placement","Learning contract","Competency-based education","Process recording","Field seminar"], sampleQ:"Write a process recording of an initial client meeting, identifying your verbal and non-verbal techniques and areas for skill development."},
+    ],
+    msw: [
+      {code:"SWK 520", title:"Human Behavior in Social Environment I", credits:3, semester:"Fall", desc:"AAMU's flagship foundation course using the EPSE framework. Life cycle development through adolescence in ecological context.", concepts:["EPSE framework (Ecological, Problem-Solving, Empowerment)","Ecological systems theory","Life cycle through adolescence","Social-cultural determinants","Trauma and development"], readings:["Hutchison, E. (2019). Dimensions of Human Behavior. SAGE.","Bronfenbrenner, U. (1979). The Ecology of Human Development","AAMU MSW Handbook — EPSE framework section"], keyTerms:["EPSE framework","Ecological perspective","Microsystem","Resilience","Protective factors"], sampleQ:"Using AAMU's EPSE framework, analyze the ecological factors affecting the healthy development of a Black adolescent in Alabama's rural Black Belt region."},
+      {code:"SWK 521", title:"Human Behavior in Social Environment II", credits:3, semester:"Spring", desc:"Second HBSE course — adulthood through aging, families, organizations, and communities. EPSE applied to macro systems.", concepts:["Adult and late-life development","Organizational behavior","Community systems","Intersectionality","Structural determinants of health"], readings:["Zastrow & Kirst-Ashman (2019). Understanding Human Behavior. Cengage.","Collins, P.H. (2000). Black Feminist Thought. Routledge.","Green, J. (2008). Cultural Awareness in the Human Services"], keyTerms:["Intersectionality","Structural racism","Aging theories","Organizational culture","Community capacity"], sampleQ:"Analyze how structural racism, as a macro-level ecological factor, affects the mental health and service utilization of Black older adults in Alabama."},
+      {code:"SWK 587", title:"Social Work Empowerment (Advanced Standing Bridge)", credits:3, semester:"Summer (Adv. Standing)", desc:"Bridge course for BSW graduates entering the MSW. Integrates foundation areas — practice, policy, research, field — through an empowerment lens.", concepts:["Empowerment theory","Strengths-based practice","Foundation integration","Anti-oppressive practice","Professional role review"], readings:["Lee, J.A.B. (2001). The Empowerment Approach to Social Work Practice. Columbia University Press.","Solomon, B. (1976). Black Empowerment. Columbia University Press.","NASW Standards for Cultural Competence"], keyTerms:["Internalized oppression","Critical consciousness","Power dynamics","Strengths assessment"], sampleQ:"How does Barbara Solomon's Black Empowerment model (1976) remain relevant to social work practice with African American communities at AAMU's community partner agencies in Huntsville today?"},
+      {code:"SWK 600", title:"Intervention Strategies with Vulnerable Clients", credits:3, semester:"Fall", desc:"Advanced practice course. Relationship-building, assessment, and intervention with vulnerable populations. Concentration-specific focus.", concepts:["Advanced assessment techniques","Crisis intervention","Trauma-informed interventions","Motivational Interviewing (advanced)","Cultural competence in intervention"], readings:["Hepworth, D.H. et al. (2022). Direct Social Work Practice. Cengage.","van der Kolk, B. (2015). The Body Keeps the Score. Penguin.","SAMHSA's Trauma-Informed Approach and Practices"], keyTerms:["Biopsychosocial-spiritual assessment","TIC principles","Therapeutic alliance","Evidence-based interventions"], sampleQ:"Develop a comprehensive intervention plan for a family referred by DHR for suspected child neglect, incorporating TIC principles and AAMU's EPSE framework."},
+      {code:"SWK 630", title:"Needs Assessment & Program Evaluation", credits:3, semester:"Spring", desc:"Scientific problem-solving and accountability in professional practice. Students develop either a needs assessment or program evaluation.", concepts:["Needs assessment models","Logic model development","Formative vs. summative evaluation","Community-based research","Data collection and analysis"], readings:["Royse, D. et al. (2016). Program Evaluation: An Introduction. Cengage.","Rossi, P.H. et al. (2004). Evaluation: A Systematic Approach. SAGE.","Alabama Department of Public Health — community health data"], keyTerms:["Logic model","Process evaluation","Outcome evaluation","Windshield survey","Key informant"], sampleQ:"Design a program evaluation for a community mental health outreach program serving unhoused individuals in Madison County, Alabama."},
+      {code:"SWK 642", title:"Sexual Abuse: Assessment & Intervention", credits:2, semester:"Elective", desc:"Childhood sexual abuse, adult survivors, offender treatment, social work roles in protective services and forensic settings.", concepts:["Trauma-informed assessment of sexual abuse","Adult survivor treatment","Child protective services role","Expert witness role","Mandatory reporting laws in Alabama"], readings:["Briere, J. & Scott, C. (2015). Principles of Trauma Therapy. SAGE.","APSAC Practice Guidelines — Child Sexual Abuse","Alabama Child Abuse & Neglect Reporting Act"], keyTerms:["Disclosure dynamics","Forensic interview","Secondary trauma","Protective factors","Mandatory reporting"], sampleQ:"A 7-year-old child discloses sexual abuse during a school social work session. Outline the immediate steps you would take under Alabama law and NASW ethical standards."},
+    ],
+    phd: [
+      {code:"PhD-SWK", title:"Doctor of Philosophy in Social Work (Online)", credits:58, semester:"Fall 2024 Launch", desc:"First fully-online Ph.D. in Social Work at an HBCU in the United States. Requires MSW from CSWE-accredited program. 58 credit hours including dissertation.", concepts:["Research design (advanced)","Social work theory construction","Qualitative & quantitative methods","Dissertation research","Teaching social work"], readings:["Creswell, J.W. (2018). Research Design. SAGE.","Neuman, W.L. (2014). Social Research Methods. Pearson.","Selected AAMU faculty publications"], keyTerms:["Research paradigm","Epistemology","Grounded theory","Critical race theory","Structural equation modeling"], sampleQ:"Propose a dissertation topic examining disparities in child welfare outcomes for Black families in Alabama's rural counties using a critical race theoretical framework."},
+      {code:"PhD-Research", title:"Advanced Research Methods & Dissertation", credits:18, semester:"Years 2-3", desc:"Advanced quantitative (SEM, multilevel modeling), qualitative (grounded theory, narrative), and mixed methods. Dissertation development from prospectus to defense.", concepts:["Structural equation modeling (SEM)","Grounded theory methodology","Systematic reviews & meta-analysis","Dissertation prospectus","IRB at advanced level"], readings:["Maxwell, J.A. (2013). Qualitative Research Design. SAGE.","Kline, R.B. (2016). Principles and Practice of Structural Equation Modeling. Guilford.","Journal of Social Work Education","Research on Social Work Practice (RSWP)"], keyTerms:["Prospectus","Theoretical framework","Methodological alignment","IRB protocol","Peer-reviewed publication"], sampleQ:"Critique the methodological rigor of a quantitative study on mental health disparities in rural Southern communities. Identify threats to internal and external validity."},
+    ]
+  },
+
+  certifications: [
+    {level:"LBSW", full:"Licensed Bachelor Social Worker", degree:"BSW (CSWE-accredited)", exam:"ASWB Bachelor's Exam", supervision:"24 months / 96 supervised hours (4 hrs/month)", scope:"Entry-level non-clinical generalist practice", color:"#3A7D44", emoji:"🎓"},
+    {level:"LMSW", full:"Licensed Master Social Worker", degree:"MSW (CSWE-accredited)", exam:"ASWB Master's Exam", supervision:"3,000 hours post-master's supervised experience", scope:"Therapy, case management, social work services to individuals, families, groups", color:"#2E6DA4", emoji:"📋"},
+    {level:"LICSW", full:"Licensed Independent Clinical Social Worker", degree:"MSW + 3,000 clinical hours", exam:"ASWB Clinical Exam", supervision:"Must be supervised by LICSW", scope:"Clinical, non-clinical, psychotherapy; diagnose & assess mental health disorders", color:"#0D6E74", emoji:"🏥"},
+    {level:"PIP", full:"Private Independent Practice Certification", degree:"LICSW required", exam:"No additional exam", supervision:"Varies by practice area", scope:"Independent private practice in clinical, casework, administration, community org, or research", color:"#6E3D8A", emoji:"🌟"},
+  ],
+
+  aswbExams: [
+    {name:"Bachelor's Exam", target:"LBSW candidates", items:170, duration:"4 hours", passRate:"~79%", content:["Human Development, Diversity & Behavior in the Environment (27%)","Assessment & Intervention Planning (24%)","Direct & Indirect Practice (21%)","Professional Relationships, Values & Ethics (28%)"]},
+    {name:"Master's Exam", target:"LMSW candidates", items:170, duration:"4 hours", passRate:"~75%", content:["Human Development & Behavior (22%)","Assessment, Diagnosis & Treatment Planning (26%)","Psychotherapy, Clinical Interventions (22%)","Professional Values, Ethics & Law (30%)"]},
+    {name:"Clinical Exam", target:"LICSW candidates", items:170, duration:"4 hours", passRate:"~72%", content:["Human Development (15%)","Assessment (27%)","Psychotherapy & Clinical Interventions (26%)","Client/Worker Relationships (11%)","Professional Values & Ethics (21%)"]},
+  ],
+
+  licenseSteps: [
+    {num:1, title:"Graduate from CSWE Program", desc:"Complete BSW or MSW from AAMU (CSWE-accredited since 1979/1998)", icon:"🎓"},
+    {num:2, title:"Apply to ABSWE", desc:"Submit application + $75 fee to Alabama State Board of Social Work Examiners", icon:"📝"},
+    {num:3, title:"Get Board Approval", desc:"ABSWE reviews your application and clears you to test", icon:"✅"},
+    {num:4, title:"Register with ASWB", desc:"Register for the appropriate exam level at aswb.org — fee due to ASWB", icon:"📋"},
+    {num:5, title:"Pass & Get Licensed!", desc:"Pass exam → ABSWE issues license → Renew every 2 years with 30-40 CE hours", icon:"🏆"},
+  ],
+
+  references: [
+    {name:"NASW — National Association of Social Workers", desc:"Largest social work professional organization. Maintains the Code of Ethics, advocates for policy, and provides CE resources.", url:"https://www.socialworkers.org", color:"#0D6E74", icon:"⚖️", tags:["Code of Ethics","CE","Policy Advocacy","Standards"]},
+    {name:"CSWE — Council on Social Work Education", desc:"Accrediting body for all BSW and MSW programs. Defines Educational Policy and Accreditation Standards (EPAS 2022).", url:"https://www.cswe.org", color:"#2E6DA4", icon:"🎓", tags:["Accreditation","EPAS","Curriculum","Competencies"]},
+    {name:"ASWB — Association of Social Work Boards", desc:"Develops and administers ASWB licensing exams. Candidate handbooks, practice tests, and exam content outlines available.", url:"https://www.aswb.org", color:"#3A7D44", icon:"📋", tags:["LBSW Exam","LMSW Exam","Clinical Exam","Licensing"]},
+    {name:"ABSWE — Alabama State Board of Social Work Examiners", desc:"Regulates social work licensure in Alabama. Submit applications, verify licenses, and access CE requirements.", url:"https://socialwork.alabama.gov", color:"#C8891A", icon:"🏛️", tags:["Alabama","LBSW","LMSW","LICSW","Renewals"]},
+    {name:"AAMU Department of Social Work", desc:"AAMU's nationally #1-ranked social work program (Research.com 2024). BSW, MSW, and new Ph.D. programs. First HBCU with online Ph.D. in Social Work.", url:"https://www.aamu.edu/academics/colleges/education-humanities-behavioral-sciences/departments/social-work/", color:"#6E3D8A", icon:"🐾", tags:["BSW","MSW","PhD","Field Education","Huntsville AL"]},
+    {name:"SAMHSA — Substance Abuse & Mental Health Services Administration", desc:"Federal agency providing TIC guidelines, treatment locators, and evidence-based practice toolkits widely used in social work.", url:"https://www.samhsa.gov", color:"#2E6DA4", icon:"🧠", tags:["TIC","Mental Health","Substance Use","EBP Resources"]},
+    {name:"Social Work Licensure Compact", desc:"Alabama joined in 2024. Facilitates multistate practice for licensed social workers. Allows licensed SWs to practice in compact member states.", url:"https://swcompact.org", color:"#0D6E74", icon:"🗺️", tags:["Multistate Licensure","Compact","Alabama 2024","Mobility"]},
+    {name:"Social Work Abstracts (NASW Press)", desc:"Premier database for peer-reviewed social work research. Access through AAMU library. Essential for evidence-based practice and literature reviews.", url:"https://www.socialworkers.org/Research/Social-Work-Abstracts", color:"#3A7D44", icon:"📚", tags:["Research Database","Literature Review","Peer-Reviewed","EBP"]},
+    {name:"ASWB Exam Candidate Handbook", desc:"Official exam guide with content outlines, registration steps, test-taking tips, and pass rates. Download before scheduling your exam.", url:"https://www.aswb.org/exam/exam-candidate-handbook/", color:"#C8891A", icon:"📖", tags:["Exam Prep","ASWB","Study Guide","Content Outline"]},
+  ],
+
+  principles: [
+    {icon:"⚖️", title:"Ethical Foundation", desc:"All interactions uphold the NASW Code of Ethics — dignity, justice, confidentiality, and non-maleficence.", bg:"#E6F4F5"},
+    {icon:"🌍", title:"Cultural Humility", desc:"Content reflects anti-oppressive, anti-racist, and culturally responsive practice — essential to AAMU's HBCU mission.", bg:"#FDF4E7"},
+    {icon:"🫀", title:"Trauma-Informed Design", desc:"The AI engages students with sensitivity, recognizing secondary traumatic stress and avoiding re-traumatization.", bg:"#EDF6EF"},
+    {icon:"🎓", title:"CSWE Alignment", desc:"All goals are mapped to CSWE EPAS 2022 competencies, ensuring accreditation-readiness.", bg:"#EAF1FB"},
+    {icon:"🤲", title:"Equity & Accessibility", desc:"Designed to serve AAMU's diverse students — first-generation, historically marginalized, and non-traditional learners.", bg:"#F3ECF7"},
+    {icon:"👩‍🏫", title:"Human Oversight", desc:"AI supplements — never replaces — AAMU faculty, field supervisors, and licensed social work practitioners.", bg:"#E6F4F5"},
+  ]
+};
+
+// ════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════
+let activeFilter = 'all';
+let activeCourseLevel = 'bsw';
+let activeTryService = null;
+let chatRunning = false;
+
+// ════════════════════════════════════════
+//  RENDER FUNCTIONS
+// ════════════════════════════════════════
+
+function renderPillars() {
+  const grid = document.getElementById('pillarsGrid');
+  grid.innerHTML = DATA.pillars.map(p => `
+    <div class="bg-[#F9F6F1] rounded-2xl p-6 border-t-4 card-hover cursor-pointer group"
+         style="border-top-color:${p.borderColor}"
+         onclick="setFilter('${p.id}');document.getElementById('services').scrollIntoView({behavior:'smooth'})">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center text-2xl mb-4" style="background:${p.iconBg}">${p.icon}</div>
+      <h3 style="font-family:'Playfair Display',serif" class="text-lg text-slate mb-2 group-hover:text-teal transition-colors">${p.name}</h3>
+      <p class="text-slate-mid text-sm leading-relaxed mb-3">${p.tagline}</p>
+      <span class="text-xs font-bold" style="color:${p.textColor}">${p.count} Services →</span>
+    </div>
+  `).join('');
+}
+
+function renderFilterPills() {
+  const container = document.getElementById('filterPills');
+  const all = `<button onclick="setFilter('all')" id="pill-all" class="px-4 py-1.5 rounded-full text-sm font-semibold transition-all pill-active">All</button>`;
+  const pills = DATA.pillars.map(p => `
+    <button onclick="setFilter('${p.id}')" id="pill-${p.id}" class="px-4 py-1.5 rounded-full text-sm font-semibold transition-all pill-inactive">${p.name}</button>
+  `).join('');
+  container.innerHTML = all + pills;
+}
+
+function setFilter(id) {
+  activeFilter = id;
+  // Update pill styles
+  ['all', ...DATA.pillars.map(p=>p.id)].forEach(pid => {
+    const el = document.getElementById('pill-'+pid);
+    if (el) {
+      el.className = 'px-4 py-1.5 rounded-full text-sm font-semibold transition-all ' + (pid===id?'pill-active':'pill-inactive');
     }
-  </script>
+  });
+  renderServices();
+}
+
+function renderServices() {
+  const grid = document.getElementById('servicesGrid');
+  const svcs = activeFilter==='all' ? DATA.services : DATA.services.filter(s=>s.pillar===activeFilter);
+  grid.innerHTML = svcs.map((s,i) => `
+    <div class="bg-white rounded-2xl overflow-hidden card-hover border border-transparent hover:border-teal/20 shadow-sm flex flex-col">
+      <div class="h-1.5 w-full ${s.barBg}"></div>
+      <div class="p-6 flex-1 flex flex-col">
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 ${s.iconBg}">${s.icon}</div>
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full tag-${s.pillar}">${s.code}</span>
+        </div>
+        <h3 style="font-family:'Playfair Display',serif" class="text-lg text-slate mb-2">${s.title}</h3>
+        <p class="text-slate-mid text-sm leading-relaxed mb-4 flex-1">${s.summary}</p>
+        <ul class="space-y-1.5 mb-5">
+          ${s.outcomes.slice(0,2).map(o=>`<li class="flex items-start gap-2 text-xs text-slate-mid"><span class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${s.dotBg}"></span>${o}</li>`).join('')}
+        </ul>
+        <div class="flex gap-2 pt-4 border-t border-slate-light/60">
+          <button onclick="openTryNow('${s.id}')" class="flex-1 bg-teal text-white text-xs font-bold py-2 px-3 rounded-xl hover:bg-teal-dark transition-colors flex items-center justify-center gap-1">▶ Try Now</button>
+          <button onclick="openSvcDetail('${s.id}')" class="flex-1 bg-slate-light text-slate text-xs font-bold py-2 px-3 rounded-xl hover:bg-teal-light hover:text-teal transition-colors flex items-center justify-center gap-1">More Info →</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showCourseLevel(level) {
+  activeCourseLevel = level;
+  ['bsw','msw','phd'].forEach(l => {
+    const tab = document.getElementById('tab-'+l);
+    tab.className = 'px-5 py-2 rounded-full text-sm font-semibold transition-all ' + (l===level?'tab-active':'tab-inactive');
+  });
+  renderCourses();
+}
+
+function renderCourses() {
+  const grid = document.getElementById('coursesGrid');
+  const courses = DATA.courses[activeCourseLevel];
+  grid.innerHTML = courses.map((c,i) => `
+    <div class="bg-[#F9F6F1] rounded-2xl p-6 mb-4 border border-teal-light/50 card-hover">
+      <div class="flex flex-col md:flex-row md:items-start gap-4">
+        <div class="shrink-0">
+          <div class="bg-teal text-white text-xs font-bold px-3 py-1 rounded-full inline-block mb-1">${Array.isArray(c.credits)?c.credits.join('/'):c.credits} Credits</div>
+          <div class="bg-gold-light text-gold text-xs font-bold px-3 py-1 rounded-full inline-block ml-1">${c.code}</div>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-start justify-between gap-2 flex-wrap">
+            <h3 style="font-family:'Playfair Display',serif" class="text-xl text-slate">${c.title}</h3>
+            <span class="text-xs text-slate-mid bg-white rounded-full px-3 py-1 border border-slate-light shrink-0">${c.semester}</span>
+          </div>
+          <p class="text-slate-mid text-sm mt-1 mb-4 leading-relaxed">${c.desc}</p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            ${c.concepts.map(k=>`<span class="study-chip bg-teal-light text-teal">${k}</span>`).join('')}
+          </div>
+          <div class="flex gap-3 flex-wrap">
+            <button onclick="openCourseDetail(${i})" class="text-xs font-bold bg-teal text-white px-4 py-2 rounded-xl hover:bg-teal-dark transition-colors">📚 Study Materials</button>
+            <button onclick="openTryNow('L1')" class="text-xs font-bold bg-gold-light text-gold px-4 py-2 rounded-xl hover:bg-gold/20 transition-colors">🤖 Ask AI About This Course</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCerts() {
+  const grid = document.getElementById('certsGrid');
+  grid.innerHTML = DATA.certifications.map(c => `
+    <div class="bg-white rounded-2xl p-6 card-hover cert-card" style="border-left-color:${c.color}">
+      <div class="text-3xl mb-3">${c.emoji}</div>
+      <div class="inline-block text-white text-xs font-bold px-3 py-1 rounded-full mb-3" style="background:${c.color}">${c.level}</div>
+      <h3 style="font-family:'Playfair Display',serif" class="text-lg text-slate mb-3">${c.full}</h3>
+      <div class="space-y-2 text-sm text-slate-mid">
+        <div class="flex gap-2"><span class="font-semibold text-slate shrink-0">Degree:</span>${c.degree}</div>
+        <div class="flex gap-2"><span class="font-semibold text-slate shrink-0">Exam:</span>${c.exam}</div>
+        <div class="flex gap-2"><span class="font-semibold text-slate shrink-0">Supervision:</span>${c.supervision}</div>
+        <div class="flex gap-2"><span class="font-semibold text-slate shrink-0">Scope:</span>${c.scope}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderASWBExams() {
+  const grid = document.getElementById('aswbExams');
+  grid.innerHTML = DATA.aswbExams.map(e => `
+    <div class="bg-[#F9F6F1] rounded-xl p-5">
+      <h4 class="font-bold text-slate mb-1">${e.name}</h4>
+      <p class="text-xs text-slate-mid mb-3">${e.target}</p>
+      <div class="flex gap-4 mb-3 text-xs">
+        <div class="text-center"><div class="font-bold text-teal text-lg">${e.items}</div><div class="text-slate-mid">Items</div></div>
+        <div class="text-center"><div class="font-bold text-teal text-lg">${e.duration}</div><div class="text-slate-mid">Duration</div></div>
+        <div class="text-center"><div class="font-bold text-teal text-lg">${e.passRate}</div><div class="text-slate-mid">Pass Rate</div></div>
+      </div>
+      <ul class="space-y-1">
+        ${e.content.map(c=>`<li class="text-xs text-slate-mid flex items-start gap-1.5"><span class="text-teal mt-0.5">•</span>${c}</li>`).join('')}
+      </ul>
+      <a href="https://www.aswb.org/exam/exam-candidate-handbook/" target="_blank" class="mt-3 block text-xs font-bold text-teal hover:underline">Download Candidate Handbook →</a>
+    </div>
+  `).join('');
+}
+
+function renderLicenseSteps() {
+  const grid = document.getElementById('licenseSteps');
+  grid.innerHTML = DATA.licenseSteps.map((s,i) => `
+    <div class="bg-white rounded-xl p-4 text-center border border-teal-light/50 relative">
+      ${i<DATA.licenseSteps.length-1?`<div class="hidden lg:block absolute top-1/2 -right-2 z-10 text-teal font-bold text-lg">→</div>`:''}
+      <div class="w-10 h-10 rounded-full hero-badge flex items-center justify-center text-xl mx-auto mb-3">${s.icon}</div>
+      <div class="text-xs font-bold text-teal mb-1">Step ${s.num}</div>
+      <div class="font-semibold text-slate text-sm mb-1">${s.title}</div>
+      <div class="text-xs text-slate-mid leading-snug">${s.desc}</div>
+    </div>
+  `).join('');
+}
+
+function renderReferences() {
+  const grid = document.getElementById('refsGrid');
+  grid.innerHTML = DATA.references.map(r => `
+    <div class="bg-[#F9F6F1] rounded-2xl p-6 card-hover ref-card" style="border-top-color:${r.color}">
+      <div class="text-2xl mb-3">${r.icon}</div>
+      <h3 class="font-bold text-slate mb-2 leading-snug">${r.name}</h3>
+      <p class="text-slate-mid text-sm leading-relaxed mb-4">${r.desc}</p>
+      <div class="flex flex-wrap gap-1.5 mb-4">
+        ${r.tags.map(t=>`<span class="text-xs bg-white border border-slate-light rounded-full px-2 py-0.5 text-slate-mid">${t}</span>`).join('')}
+      </div>
+      <a href="${r.url}" target="_blank" class="text-xs font-bold text-teal hover:underline flex items-center gap-1">Visit Resource →</a>
+    </div>
+  `).join('');
+}
+
+function renderPrinciples() {
+  const grid = document.getElementById('principlesGrid');
+  grid.innerHTML = DATA.principles.map(p => `
+    <div class="bg-white rounded-2xl p-5 flex gap-4 items-start border border-transparent hover:border-teal/15 transition-all card-hover">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style="background:${p.bg}">${p.icon}</div>
+      <div>
+        <h4 class="font-semibold text-slate mb-1 text-sm">${p.title}</h4>
+        <p class="text-slate-mid text-xs leading-relaxed">${p.desc}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════
+//  TRY NOW SIMULATION
+// ════════════════════════════════════════
+
+function openTryNow(serviceId) {
+  const svc = DATA.services.find(s=>s.id===serviceId);
+  if (!svc) return;
+  activeTryService = svc;
+  document.getElementById('tryModalTitle').textContent = '▶ Try: ' + svc.title;
+  document.getElementById('tryModalSub').textContent = 'Pillar: ' + svc.pillar.charAt(0).toUpperCase()+svc.pillar.slice(1) + ' · Service ' + svc.code;
+  
+  // Render workflow
+  const wf = document.getElementById('workflowSteps');
+  wf.innerHTML = `
+    <p class="text-xs font-bold uppercase tracking-wide text-slate-mid mb-2">How It Works:</p>
+    <div class="flex flex-wrap gap-2">
+      ${svc.workflow.map((step,i) => `
+        <div class="flex items-center gap-1.5 text-xs text-slate-mid">
+          <span class="w-5 h-5 rounded-full bg-teal text-white flex items-center justify-center font-bold text-xs shrink-0">${i+1}</span>
+          <span>${step}</span>
+          ${i<svc.workflow.length-1?'<span class="text-teal-mid ml-1">→</span>':''}
+        </div>
+      `).join('')}
+    </div>`;
+  
+  // Reset chat
+  document.getElementById('chatWindow').innerHTML = `<div class="flex justify-start"><div class="ai-bubble rounded-2xl rounded-tl-sm px-4 py-3 max-w-xs"><div class="text-xs font-bold text-teal mb-1">SocialMind AI</div><p class="text-sm text-slate">Hi! I'm SocialMind AI. Select a sample prompt below to see how I can help with <strong>${svc.title}</strong>. 👋</p></div></div>`;
+  
+  // Render prompts
+  const promptsContainer = document.getElementById('samplePrompts');
+  promptsContainer.innerHTML = svc.prompts.map(p => `
+    <button onclick="runChat('${svc.id}','${p.label}')" class="bg-white border border-teal/20 text-teal text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-teal hover:text-white transition-all">${p.label}</button>
+  `).join('');
+  
+  document.getElementById('tryModal').classList.remove('hidden');
+}
+
+function closeTryModal() {
+  document.getElementById('tryModal').classList.add('hidden');
+  activeTryService = null;
+}
+
+async function runChat(serviceId, promptLabel) {
+  if (chatRunning) return;
+  const svc = DATA.services.find(s=>s.id===serviceId);
+  const prompt = svc.prompts.find(p=>p.label===promptLabel);
+  if (!svc || !prompt) return;
+  chatRunning = true;
+
+  const chatWindow = document.getElementById('chatWindow');
+
+  // Add user message
+  chatWindow.innerHTML += `
+    <div class="flex justify-end">
+      <div class="user-bubble rounded-2xl rounded-tr-sm px-4 py-3 max-w-xs">
+        <p class="text-sm text-white">${prompt.msg}</p>
+      </div>
+    </div>`;
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  // Typing indicator
+  const typingId = 'typing-'+Date.now();
+  chatWindow.innerHTML += `
+    <div class="flex justify-start" id="${typingId}">
+      <div class="ai-bubble rounded-2xl rounded-tl-sm px-4 py-3">
+        <div class="text-xs font-bold text-teal mb-1">SocialMind AI</div>
+        <div class="flex gap-1 items-center"><span class="w-2 h-2 rounded-full bg-teal animate-bounce" style="animation-delay:0s"></span><span class="w-2 h-2 rounded-full bg-teal animate-bounce" style="animation-delay:.15s"></span><span class="w-2 h-2 rounded-full bg-teal animate-bounce" style="animation-delay:.3s"></span></div>
+      </div>
+    </div>`;
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  await sleep(1600);
+
+  // Remove typing and add response
+  const typingEl = document.getElementById(typingId);
+  if (typingEl) typingEl.remove();
+
+  // Format response
+  const formatted = formatResponse(prompt.response);
+  const responseId = 'resp-'+Date.now();
+  chatWindow.innerHTML += `
+    <div class="flex justify-start" id="${responseId}">
+      <div class="ai-bubble rounded-2xl rounded-tl-sm px-4 py-3 max-w-lg w-full">
+        <div class="text-xs font-bold text-teal mb-2">SocialMind AI</div>
+        <div class="text-sm text-slate leading-relaxed space-y-1">${formatted}</div>
+      </div>
+    </div>`;
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+  chatRunning = false;
+}
+
+function formatResponse(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n\n/g, '</p><p class="mt-2">')
+    .replace(/\n/g, '<br/>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>');
+}
+
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ════════════════════════════════════════
+//  SERVICE DETAIL MODAL
+// ════════════════════════════════════════
+
+function openSvcDetail(id) {
+  const s = DATA.services.find(x=>x.id===id);
+  if (!s) return;
+  document.getElementById('svcModalContent').innerHTML = `
+    <div class="h-2 rounded-t-3xl ${s.barBg}"></div>
+    <div class="p-8">
+      <div class="flex items-start justify-between mb-5">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl ${s.iconBg}">${s.icon}</div>
+          <div>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full tag-${s.pillar}">${s.code}</span>
+            <h3 style="font-family:'Playfair Display',serif" class="text-2xl text-slate mt-1">${s.title}</h3>
+          </div>
+        </div>
+        <button onclick="closeSvcModal()" class="text-slate-mid hover:text-slate w-8 h-8 flex items-center justify-center">✕</button>
+      </div>
+      <p class="text-slate-mid leading-relaxed mb-6">${s.description}</p>
+      <h4 class="font-semibold text-slate text-sm uppercase tracking-wide mb-3">Key Capabilities</h4>
+      <ul class="space-y-2.5 mb-6">
+        ${s.outcomes.map((o,i)=>`<li class="flex items-start gap-3"><span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 text-white ${s.dotBg}">${i+1}</span><span class="text-sm text-slate leading-relaxed">${o}</span></li>`).join('')}
+      </ul>
+      <div class="flex flex-wrap gap-2 pt-5 border-t border-slate-light mb-5">
+        ${s.tags.map(t=>`<span class="bg-slate-light text-slate-mid px-3 py-1 rounded-full text-xs font-medium">${t}</span>`).join('')}
+      </div>
+      <button onclick="closeSvcModal();openTryNow('${s.id}')" class="w-full bg-teal text-white py-3 rounded-xl font-bold hover:bg-teal-dark transition-colors">▶ Try This Service Now</button>
+    </div>`;
+  document.getElementById('svcModal').classList.remove('hidden');
+}
+
+function closeSvcModal() {
+  document.getElementById('svcModal').classList.add('hidden');
+}
+
+// ════════════════════════════════════════
+//  COURSE DETAIL MODAL
+// ════════════════════════════════════════
+
+function openCourseDetail(idx) {
+  const c = DATA.courses[activeCourseLevel][idx];
+  document.getElementById('courseModalContent').innerHTML = `
+    <div class="h-2 rounded-t-3xl bg-gradient-to-r from-teal to-gold"></div>
+    <div class="p-8">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <div class="flex gap-2 mb-2">
+            <span class="bg-teal text-white text-xs font-bold px-3 py-1 rounded-full">${c.code}</span>
+            <span class="bg-gold-light text-gold text-xs font-bold px-3 py-1 rounded-full">${Array.isArray(c.credits)?c.credits.join('/'):c.credits} Credits</span>
+            <span class="bg-slate-light text-slate-mid text-xs font-bold px-3 py-1 rounded-full">${c.semester}</span>
+          </div>
+          <h3 style="font-family:'Playfair Display',serif" class="text-2xl text-slate">${c.title}</h3>
+        </div>
+        <button onclick="document.getElementById('courseModal').classList.add('hidden')" class="text-slate-mid hover:text-slate w-8 h-8 flex items-center justify-center">✕</button>
+      </div>
+      <p class="text-slate-mid leading-relaxed mb-6">${c.desc}</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+        <div class="bg-[#F9F6F1] rounded-xl p-5">
+          <h4 class="font-bold text-slate text-sm mb-3">🔑 Key Concepts</h4>
+          <ul class="space-y-1.5">
+            ${c.concepts.map(k=>`<li class="flex items-center gap-2 text-sm text-slate-mid"><span class="w-1.5 h-1.5 rounded-full bg-teal shrink-0"></span>${k}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="bg-[#F9F6F1] rounded-xl p-5">
+          <h4 class="font-bold text-slate text-sm mb-3">📚 Key Terms</h4>
+          <div class="flex flex-wrap gap-2">
+            ${c.keyTerms.map(t=>`<span class="study-chip bg-teal-light text-teal">${t}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-[#F9F6F1] rounded-xl p-5 mb-5">
+        <h4 class="font-bold text-slate text-sm mb-3">📖 Recommended Readings</h4>
+        <ul class="space-y-2">
+          ${c.readings.map(r=>`<li class="text-sm text-slate-mid leading-snug flex items-start gap-2"><span class="text-gold mt-0.5 shrink-0">→</span>${r}</li>`).join('')}
+        </ul>
+      </div>
+
+      <div class="bg-teal-light border border-teal/20 rounded-xl p-5 mb-5">
+        <h4 class="font-bold text-teal text-sm mb-2">💡 Sample Study Question</h4>
+        <p class="text-slate text-sm leading-relaxed italic">${c.sampleQ}</p>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="document.getElementById('courseModal').classList.add('hidden');openTryNow('L2')" class="flex-1 bg-teal text-white py-3 rounded-xl font-bold hover:bg-teal-dark transition-colors text-sm">🤖 Practice This with AI</button>
+        <a href="https://www.aamu.edu/academics/colleges/education-humanities-behavioral-sciences/departments/social-work/" target="_blank" class="flex-1 bg-gold-light text-gold py-3 rounded-xl font-bold hover:bg-gold/20 transition-colors text-sm text-center">AAMU Course Info →</a>
+      </div>
+    </div>`;
+  document.getElementById('courseModal').classList.remove('hidden');
+}
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+renderPillars();
+renderFilterPills();
+renderServices();
+showCourseLevel('bsw');
+renderCerts();
+renderASWBExams();
+renderLicenseSteps();
+renderReferences();
+renderPrinciples();
+
+// Keyboard close
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') { closeTryModal(); closeSvcModal(); document.getElementById('courseModal').classList.add('hidden'); }
+});
+</script>
 </body>
 </html>
