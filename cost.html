@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Cost Comparison — VM + Java vs Functions + .NET</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0f1a;
+    --surface: #141829;
+    --surface2: #1b2038;
+    --border: #262d4a;
+    --text: #e0e4f0;
+    --muted: #7a82a6;
+    --java: #f89820;
+    --java-bg: rgba(248,152,32,0.08);
+    --java-border: rgba(248,152,32,0.25);
+    --dotnet: #512bd4;
+    --dotnet-light: #7b5cf5;
+    --dotnet-bg: rgba(81,43,212,0.08);
+    --dotnet-border: rgba(81,43,212,0.25);
+    --green: #34d399;
+    --red: #f87171;
+    --accent: #38bdf8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  header .badge {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(56,189,248,0.1);
+    border: 1px solid rgba(56,189,248,0.2);
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #e0e4f0, #7a82a6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* Scenario Slider */
+  .scenario-control {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 40px;
+  }
+
+  .scenario-control h3 {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .slider-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 640px) {
+    .slider-group { grid-template-columns: 1fr; }
+  }
+
+  .slider-item label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+
+  .slider-item label span.val {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 15px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface2);
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(56,189,248,0.4);
+  }
+
+  /* Comparison Grid */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 768px) {
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+
+  .option-card {
+    border-radius: 16px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .option-card.java {
+    background: var(--java-bg);
+    border: 1px solid var(--java-border);
+  }
+  .option-card.java::before { background: var(--java); }
+
+  .option-card.dotnet {
+    background: var(--dotnet-bg);
+    border: 1px solid var(--dotnet-border);
+  }
+  .option-card.dotnet::before { background: linear-gradient(90deg, var(--dotnet), var(--dotnet-light)); }
+
+  .option-card .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .java .tag { color: var(--java); }
+  .dotnet .tag { color: var(--dotnet-light); }
+
+  .option-card h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .option-card .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  .cost-total {
+    font-family: 'Space Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .java .cost-total { color: var(--java); }
+  .dotnet .cost-total { color: var(--dotnet-light); }
+
+  .cost-period {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .line-items {
+    list-style: none;
+  }
+
+  .line-items li {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 14px;
+  }
+
+  .line-items li:last-child { border: none; }
+
+  .line-items .item-label {
+    color: var(--muted);
+  }
+
+  .line-items .item-cost {
+    font-family: 'Space Mono', monospace;
+    font-weight: 500;
+  }
+
+  /* Verdict */
+  .verdict-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .verdict-bar .icon {
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+
+  .verdict-bar .verdict-text {
+    flex: 1;
+  }
+
+  .verdict-bar .verdict-text h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .verdict-bar .verdict-text p {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .savings-pill {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 24px;
+    white-space: nowrap;
+  }
+
+  .savings-pill.positive {
+    background: rgba(52,211,153,0.12);
+    color: var(--green);
+    border: 1px solid rgba(52,211,153,0.3);
+  }
+
+  /* Detail Table */
+  .detail-section {
+    margin-bottom: 40px;
+  }
+
+  .detail-section h3 {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 14px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 14px 20px;
+  }
+
+  th {
+    background: var(--surface2);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  td { border-bottom: 1px solid var(--border); }
+  tr:last-child td { border: none; }
+
+  .tag-java {
+    background: rgba(248,152,32,0.15);
+    color: var(--java);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .tag-dotnet {
+    background: rgba(123,92,245,0.15);
+    color: var(--dotnet-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* Pros/Cons */
+  .proscons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 768px) {
+    .proscons-grid { grid-template-columns: 1fr; }
+  }
+
+  .proscons-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .proscons-card h4 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .proscons-card ul {
+    list-style: none;
+  }
+
+  .proscons-card ul li {
+    position: relative;
+    padding: 6px 0 6px 22px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .proscons-card ul li::before {
+    position: absolute;
+    left: 0;
+    font-size: 13px;
+  }
+
+  .proscons-card.pros ul li::before { content: '✓'; color: var(--green); }
+  .proscons-card.cons ul li::before { content: '✗'; color: var(--red); }
+
+  .footnote {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    margin-top: 24px;
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="badge">Azure Architecture Decision</div>
+    <h1>VM + Java &nbsp;vs&nbsp; Serverless .NET</h1>
+    <p>Side-by-side monthly cost comparison for serving HTML content on Azure — adjust the traffic sliders to see how costs scale.</p>
+  </header>
+
+  <!-- Scenario Controls -->
+  <div class="scenario-control">
+    <h3>📊 Adjust Your Scenario</h3>
+    <div class="slider-group">
+      <div class="slider-item">
+        <label>Monthly Requests <span class="val" id="reqVal">500,000</span></label>
+        <input type="range" id="reqSlider" min="10000" max="10000000" value="500000" step="10000">
+      </div>
+      <div class="slider-item">
+        <label>Avg Execution Duration <span class="val" id="durVal">200 ms</span></label>
+        <input type="range" id="durSlider" min="50" max="2000" value="200" step="50">
+      </div>
+      <div class="slider-item">
+        <label>Memory per Execution <span class="val" id="memVal">256 MB</span></label>
+        <input type="range" id="memSlider" min="128" max="1536" value="256" step="128">
+      </div>
+      <div class="slider-item">
+        <label>Outbound Data Transfer <span class="val" id="dataVal">50 GB</span></label>
+        <input type="range" id="dataSlider" min="5" max="500" value="50" step="5">
+      </div>
+    </div>
+  </div>
+
+  <!-- Cost Cards -->
+  <div class="compare-grid">
+    <!-- Option A: Ubuntu VM + Java -->
+    <div class="option-card java">
+      <div class="tag">Option A</div>
+      <h2>Ubuntu VM + Java App</h2>
+      <div class="subtitle">Azure VM (B2s) · Ubuntu 24.04 · Spring Boot / Tomcat</div>
+      <div class="cost-total" id="javaTotalCost">$71.49</div>
+      <div class="cost-period">estimated / month</div>
+      <ul class="line-items">
+        <li><span class="item-label">VM Compute (B2s – 2 vCPU, 4 GB)</span><span class="item-cost" id="javaVm">$30.37</span></li>
+        <li><span class="item-label">OS Disk (P10 128 GB SSD)</span><span class="item-cost">$19.71</span></li>
+        <li><span class="item-label">Public IP (Static)</span><span class="item-cost">$3.65</span></li>
+        <li><span class="item-label">Bandwidth (outbound)</span><span class="item-cost" id="javaBw">$4.34</span></li>
+        <li><span class="item-label">Monitoring (Basic)</span><span class="item-cost">$0.00</span></li>
+        <li><span class="item-label">Managed Identity / NSG</span><span class="item-cost">$0.00</span></li>
+      </ul>
+    </div>
+
+    <!-- Option B: Functions + .NET -->
+    <div class="option-card dotnet">
+      <div class="tag">Option B</div>
+      <h2>Azure Functions + .NET App</h2>
+      <div class="subtitle">Consumption Plan · Azure Static Web Apps · .NET 8+</div>
+      <div class="cost-total" id="dotnetTotalCost">$12.90</div>
+      <div class="cost-period">estimated / month</div>
+      <ul class="line-items">
+        <li><span class="item-label">Function Executions</span><span class="item-cost" id="dotnetExec">$0.00</span></li>
+        <li><span class="item-label">Function Compute (GB-s)</span><span class="item-cost" id="dotnetCompute">$0.00</span></li>
+        <li><span class="item-label">Static Web Apps (Free tier)</span><span class="item-cost">$0.00</span></li>
+        <li><span class="item-label">Storage Account</span><span class="item-cost">$0.50</span></li>
+        <li><span class="item-label">Bandwidth (outbound)</span><span class="item-cost" id="dotnetBw">$4.34</span></li>
+        <li><span class="item-label">App Insights (basic)</span><span class="item-cost" id="dotnetInsights">$8.06</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Verdict Bar -->
+  <div class="verdict-bar">
+    <div class="icon" id="verdictIcon">⚡</div>
+    <div class="verdict-text">
+      <h3 id="verdictTitle">Serverless .NET saves ~82%</h3>
+      <p id="verdictDesc">At this traffic level, the Functions + .NET approach is significantly cheaper — you only pay for actual usage.</p>
+    </div>
+    <div class="savings-pill positive" id="savingsPill">Save $58.59/mo</div>
+  </div>
+
+  <!-- Feature Comparison Table -->
+  <div class="detail-section">
+    <h3>Feature &amp; Architecture Comparison</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th><span class="tag-java">VM + Java</span></th>
+          <th><span class="tag-dotnet">Functions + .NET</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Compute Model</td>
+          <td>Always-on VM (pay 24/7)</td>
+          <td>Pay-per-execution (scale to zero)</td>
+        </tr>
+        <tr>
+          <td>Scaling</td>
+          <td>Manual / VMSS (slow)</td>
+          <td>Auto-scale (instant, event-driven)</td>
+        </tr>
+        <tr>
+          <td>Cold Start</td>
+          <td>None — always warm</td>
+          <td>~1-3s on Consumption plan</td>
+        </tr>
+        <tr>
+          <td>OS Patching</td>
+          <td>You manage it</td>
+          <td>Fully managed by Azure</td>
+        </tr>
+        <tr>
+          <td>SSL / Custom Domain</td>
+          <td>Manual cert management</td>
+          <td>Free managed SSL via Static Web Apps</td>
+        </tr>
+        <tr>
+          <td>CI/CD</td>
+          <td>SSH + scripts / GitHub Actions</td>
+          <td>Built-in GitHub integration</td>
+        </tr>
+        <tr>
+          <td>HTML Serving</td>
+          <td>Nginx / Apache reverse proxy</td>
+          <td>Static Web Apps CDN (global edge)</td>
+        </tr>
+        <tr>
+          <td>API Backend</td>
+          <td>Spring Boot / Quarkus on JVM</td>
+          <td>.NET Minimal APIs in Functions</td>
+        </tr>
+        <tr>
+          <td>Max Execution Time</td>
+          <td>Unlimited</td>
+          <td>10 min (Consumption) / 30 min (Premium)</td>
+        </tr>
+        <tr>
+          <td>State Management</td>
+          <td>In-memory / local disk</td>
+          <td>Stateless (use Durable Functions / DB)</td>
+        </tr>
+        <tr>
+          <td>Networking</td>
+          <td>Full VNet control / NSGs</td>
+          <td>Limited on Consumption (VNet on Flex/Premium)</td>
+        </tr>
+        <tr>
+          <td>Free Tier</td>
+          <td>None (always billed)</td>
+          <td>1M requests + 400K GB-s / month free</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Scaling Cost Table -->
+  <div class="detail-section">
+    <h3>Cost at Scale — Monthly Estimates</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Monthly Requests</th>
+          <th><span class="tag-java">VM + Java</span></th>
+          <th><span class="tag-dotnet">Functions + .NET</span></th>
+          <th>Savings</th>
+        </tr>
+      </thead>
+      <tbody id="scaleTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Pros and Cons -->
+  <div class="proscons-grid">
+    <div class="proscons-card pros">
+      <h4>🟢 When to choose VM + Java</h4>
+      <ul>
+        <li>Long-running background processes or websockets</li>
+        <li>Need full OS-level control and customization</li>
+        <li>Running JVM-heavy workloads (ML, data pipelines)</li>
+        <li>Consistent, high-traffic load (>5M req/mo)</li>
+        <li>Complex networking / VPN requirements</li>
+        <li>Team deeply skilled in Java ecosystem</li>
+      </ul>
+    </div>
+    <div class="proscons-card pros">
+      <h4>🟢 When to choose Functions + .NET</h4>
+      <ul>
+        <li>Variable or spiky traffic patterns</li>
+        <li>Serving mostly static HTML + lightweight APIs</li>
+        <li>Want zero infrastructure management</li>
+        <li>Cost optimization is a priority</li>
+        <li>Rapid prototyping and faster time-to-market</li>
+        <li>Event-driven architectures (queues, timers, webhooks)</li>
+      </ul>
+    </div>
+    <div class="proscons-card cons">
+      <h4>🔴 VM + Java drawbacks</h4>
+      <ul>
+        <li>Pay 24/7 even with zero traffic</li>
+        <li>Manual patching, updates, and security</li>
+        <li>JVM memory overhead (~200-500 MB baseline)</li>
+        <li>Slower scaling response</li>
+        <li>More operational burden on your team</li>
+      </ul>
+    </div>
+    <div class="proscons-card cons">
+      <h4>🔴 Functions + .NET drawbacks</h4>
+      <ul>
+        <li>Cold starts can affect latency-sensitive apps</li>
+        <li>10-minute max execution on Consumption plan</li>
+        <li>Limited debugging / local dev complexity</li>
+        <li>Vendor lock-in to Azure platform</li>
+        <li>Can get expensive at very high sustained traffic</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="footnote">Prices based on East US region, Feb 2026 · Azure pay-as-you-go rates · Estimates only — use Azure Pricing Calculator for production planning</p>
+</div>
+
+<script>
+  const reqSlider = document.getElementById('reqSlider');
+  const durSlider = document.getElementById('durSlider');
+  const memSlider = document.getElementById('memSlider');
+  const dataSlider = document.getElementById('dataSlider');
+
+  function fmt(n) {
+    if (n < 0.01) return '$0.00';
+    return '$' + n.toFixed(2);
+  }
+
+  function fmtK(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
+    return n.toString();
+  }
+
+  function calcCosts(requests, durationMs, memoryMb, dataGb) {
+    // ===== OPTION A: Ubuntu VM + Java =====
+    const vmCompute = 30.37;       // B2s monthly
+    const osDisk = 19.71;          // P10 128GB SSD
+    const publicIp = 3.65;         // Static IP
+    const bwRate = 0.087;          // per GB after first 5 GB free
+    const vmBw = Math.max(0, dataGb - 5) * bwRate;
+    const vmTotal = vmCompute + osDisk + publicIp + vmBw;
+
+    // ===== OPTION B: Functions + .NET =====
+    const freeExec = 1000000;      // 1M free executions
+    const freeGbs = 400000;        // 400K GB-s free
+    const execRate = 0.20 / 1000000;  // $0.20 per million
+    const gbsRate = 0.000016;      // per GB-s
+
+    const billableExec = Math.max(0, requests - freeExec);
+    const execCost = billableExec * execRate;
+
+    const durationS = durationMs / 1000;
+    const memoryGb = memoryMb / 1024;
+    const totalGbs = requests * durationS * memoryGb;
+    const billableGbs = Math.max(0, totalGbs - freeGbs);
+    const computeCost = billableGbs * gbsRate;
+
+    const storageCost = 0.50;
+    const fnBw = Math.max(0, dataGb - 5) * bwRate;
+
+    // App Insights: ~$2.30/GB ingestion, estimate ~3.5 GB for logging
+    const insightsGb = Math.max(0.5, (requests / 1000000) * 3.5);
+    const insightsCost = insightsGb * 2.30;
+
+    const fnTotal = execCost + computeCost + storageCost + fnBw + insightsCost;
+
+    return {
+      vm: { total: vmTotal, compute: vmCompute, disk: osDisk, ip: publicIp, bw: vmBw },
+      fn: { total: fnTotal, exec: execCost, compute: computeCost, storage: storageCost, bw: fnBw, insights: insightsCost }
+    };
+  }
+
+  function update() {
+    const req = parseInt(reqSlider.value);
+    const dur = parseInt(durSlider.value);
+    const mem = parseInt(memSlider.value);
+    const data = parseInt(dataSlider.value);
+
+    document.getElementById('reqVal').textContent = fmtK(req);
+    document.getElementById('durVal').textContent = dur + ' ms';
+    document.getElementById('memVal').textContent = mem + ' MB';
+    document.getElementById('dataVal').textContent = data + ' GB';
+
+    const c = calcCosts(req, dur, mem, data);
+
+    // Update Java card
+    document.getElementById('javaTotalCost').textContent = fmt(c.vm.total);
+    document.getElementById('javaVm').textContent = fmt(c.vm.compute);
+    document.getElementById('javaBw').textContent = fmt(c.vm.bw);
+
+    // Update .NET card
+    document.getElementById('dotnetTotalCost').textContent = fmt(c.fn.total);
+    document.getElementById('dotnetExec').textContent = fmt(c.fn.exec);
+    document.getElementById('dotnetCompute').textContent = fmt(c.fn.compute);
+    document.getElementById('dotnetBw').textContent = fmt(c.fn.bw);
+    document.getElementById('dotnetInsights').textContent = fmt(c.fn.insights);
+
+    // Verdict
+    const diff = c.vm.total - c.fn.total;
+    const pct = ((diff / c.vm.total) * 100).toFixed(0);
+
+    if (diff > 0) {
+      document.getElementById('verdictIcon').textContent = '⚡';
+      document.getElementById('verdictTitle').textContent = `Serverless .NET saves ~${pct}%`;
+      document.getElementById('verdictDesc').textContent = `At ${fmtK(req)} requests/mo, Functions + .NET is the more cost-effective choice — pay only for what you use.`;
+      document.getElementById('savingsPill').textContent = `Save ${fmt(diff)}/mo`;
+      document.getElementById('savingsPill').className = 'savings-pill positive';
+    } else {
+      document.getElementById('verdictIcon').textContent = '☕';
+      document.getElementById('verdictTitle').textContent = `VM + Java is now cheaper`;
+      document.getElementById('verdictDesc').textContent = `At ${fmtK(req)} requests/mo with ${dur}ms duration, the fixed VM cost becomes more economical than per-execution billing.`;
+      document.getElementById('savingsPill').textContent = `VM saves ${fmt(Math.abs(diff))}/mo`;
+      document.getElementById('savingsPill').className = 'savings-pill positive';
+    }
+
+    // Scale table
+    const scenarios = [
+      { label: '100K', reqs: 100000 },
+      { label: '500K', reqs: 500000 },
+      { label: '1M', reqs: 1000000 },
+      { label: '2M', reqs: 2000000 },
+      { label: '5M', reqs: 5000000 },
+      { label: '10M', reqs: 10000000 },
+    ];
+
+    const tbody = document.getElementById('scaleTable');
+    tbody.innerHTML = '';
+
+    scenarios.forEach(s => {
+      const sc = calcCosts(s.reqs, dur, mem, data);
+      const d = sc.vm.total - sc.fn.total;
+      const winner = d > 0 ? '.NET' : 'Java';
+      const color = d > 0 ? 'var(--green)' : 'var(--java)';
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${s.label} req/mo</td>
+        <td style="font-family:'Space Mono',monospace">${fmt(sc.vm.total)}</td>
+        <td style="font-family:'Space Mono',monospace">${fmt(sc.fn.total)}</td>
+        <td style="font-family:'Space Mono',monospace;color:${color};font-weight:700">${winner} saves ${fmt(Math.abs(d))}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  reqSlider.addEventListener('input', update);
+  durSlider.addEventListener('input', update);
+  memSlider.addEventListener('input', update);
+  dataSlider.addEventListener('input', update);
+
+  update();
+</script>
+</body>
+</html>
